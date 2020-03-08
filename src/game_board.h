@@ -29,6 +29,14 @@
 
 #define CGB_BG_ATTRIB_PAL_MASK 0x03
 
+
+struct board_pieces {
+    UINT8 pet_type;
+    UINT8 body_seg;
+    UINT8 rotation;
+    UINT8 connect[2];
+};
+
 void board_redraw_all(void);
 void board_draw_tile(UINT8, UINT8, UINT8);
 

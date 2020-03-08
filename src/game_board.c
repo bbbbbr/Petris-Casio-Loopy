@@ -8,8 +8,10 @@
 #include "gfx.h"
 
 
-UINT8 board_pieces[BRD_SIZE];
+UINT8 board_tiles[BRD_SIZE];
 UINT8 board_attrib[BRD_SIZE];
+
+struct board_pieces board[BRD_SIZE];
 
 
 void board_redraw_all(void) {
@@ -23,7 +25,7 @@ void board_redraw_all(void) {
     VBK_REG = 0; // Re-Select regular BG tile map
     set_bkg_tiles(BRD_ST_X, BRD_ST_Y,
                   BRD_WIDTH, BRD_HEIGHT,
-                  &board_pieces[0]);
+                  &board_tiles[0]);
 
 }
 
@@ -41,8 +43,28 @@ void board_draw_tile(UINT8 x, UINT8 y, UINT8 tile_index) {
     VBK_REG = 0; // Re-Select regular BG tile map
     set_bkg_tiles(BRD_ST_X + x, BRD_ST_Y + y,
                   1, 1,
-                  &board_pieces[tile_index]);
+                  &board_tiles[tile_index]);
 }
+
+
+void board_tile_update_gfx(x,y) {
+
+
+        // Set pet piece
+        board_tiles[x + (y * BRD_WIDTH)] = piece;
+        // Set palette based on pet type (CGB Pal bits are 0x07)
+        board_attrib[x + (y * BRD_WIDTH)] = ((piece & GP_PET_MASK) >> GP_PET_UPSHIFT);
+
+        // Update player rotation (clear bit and then set)
+        player_piece = ((player_piece & ~GP_ROT_MASK)
+                        | GP_ROT_LUT_TILE[player_rotate]);
+
+        // Set palette based on pet type (CGB Pal bits are 0x07)
+        // And mirror bits based on rotation setting from LUT
+        player_attrib = ((player_piece & GP_PET_MASK) >> GP_PET_UPSHIFT) // Palette
+                         | GP_ROT_LUT_ATTR[player_rotate];               // Rotation sprite mirror bits
+}
+
 
 
 void board_reset(void) {
@@ -52,8 +74,11 @@ void board_reset(void) {
 
     for (x=0; x < BRD_WIDTH; x++) {
         for (y=0; y < BRD_HEIGHT; y++) {
+//            board[x + (y * BRD_WIDTH)].pet = GP_PET_NONE;
+//            board[x + (y * BRD_WIDTH)].rotation = GP_ROTATE_0;
+
             // Set pet piece
-            board_pieces[x + (y * BRD_WIDTH)] = GP_EMPTY + TILES_PET_START;
+            board_tiles[x + (y * BRD_WIDTH)] = GP_EMPTY + TILES_PET_START;
             // TODO: USE EMPTY PIECE PALETTE INSTEAD?
             // Set palette based on pet type
             board_attrib[x + (y * BRD_WIDTH)] = GP_PAL_EMPTY;
@@ -70,7 +95,7 @@ void board_reset(void) {
 UINT8 board_check_open(UINT8 x, UINT8 y) {
 
     // TODO: Bounds checking for board here (could then remove from calling function)
-    return (board_pieces[x + (y * BRD_WIDTH)] == (GP_EMPTY + TILES_PET_START));
+    return (board_tiles[x + (y * BRD_WIDTH)] == (GP_EMPTY + TILES_PET_START));
 }
 
 
@@ -84,7 +109,7 @@ void board_set_tile(UINT8 x, UINT8 y, UINT8 piece, UINT8 attrib) {
     piece +=  TILES_PET_START;
 
     // TODO: Bounds checking for board here
-    board_pieces[tile_index] = piece;
+    board_tiles[tile_index] = piece;
     // Set palette based on pet type (CGB Pal bits are 0x07)
     board_attrib[tile_index] = attrib;
 
@@ -111,7 +136,7 @@ void board_fill_random(void) {
             //piece = (x  & 0x1F) + TILES_PET_START;
 
             // Set pet piece
-            board_pieces[x + (y * BRD_WIDTH)] = piece;
+            board_tiles[x + (y * BRD_WIDTH)] = piece;
             // Set palette based on pet type (CGB Pal bits are 0x07)
             board_attrib[x + (y * BRD_WIDTH)] = ((piece & GP_PET_MASK) >> GP_PET_UPSHIFT);
         }
@@ -129,7 +154,7 @@ void board_check_completed_pets(void) {
     for (y=BRD_HEIGHT; y > 0; y--) {
         for (x=0; x < BRD_WIDTH; x++) {
 
-            // piece = board_pieces[x + (y * BRD_WIDTH)];
+            // piece = board_tiles[x + (y * BRD_WIDTH)];
             // board_attrib[x + (y * BRD_WIDTH)] = ((piece & GP_PET_MASK) >> GP_PET_UPSHIFT);
 
 

@@ -13,9 +13,12 @@
 #include "gfx.h"
 #include "gfx_print.h"
 
+#define PRINT_MAX_DIGITS  2
+#define PRINT_MAX_NUM     99 // ((10 ^ PRINT_MAX_DIGITS) - 1)
 
-#define PRINT_MAX_DIGITS  5
-#define PRINT_MAX_NUM     99999 // ((10 ^ PRINT_MAX_DIGITS) - 1)
+
+// #define PRINT_MAX_DIGITS  5
+// #define PRINT_MAX_NUM     99999 // ((10 ^ PRINT_MAX_DIGITS) - 1)
 #define PRINT_ATTRIB_PAL_MASK    0x03
 #define PRINT_ATTRIB_PAL_DEFAULT 0x04
 UINT8 digits[PRINT_MAX_DIGITS];

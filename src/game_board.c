@@ -291,7 +291,7 @@ UINT8 board_check_connected_xy(INT8 x, INT8 y, UINT8 piece, UINT8 * p_this_conne
     UINT8 adj_piece, adj_connect;
 
     // Get requested board piece
-    // (Fails if edge board piece and returns false to break out of calling loop)
+    // (Fails if outside board and returns false to break out of calling loop)
     if (board_piece_get_xy(x, y, &adj_piece, &adj_connect)) {
 
         // TODO: could check for if (adj_piece != GP_EMPTY), but the connect test below should cover that
@@ -356,6 +356,8 @@ void board_handle_pet_completed(UINT8 flags) {
 }
 
 
+#include "gfx_print.h"
+
 // NOTE: no bounds checking, assumes incoming X,Y are valid board positions
 //
 // TODO: add mode? (CHECK vs REMOVE TILES)
@@ -368,6 +370,18 @@ UINT8 board_check_completed_pet_xy(INT8 start_x, INT8 start_y, UINT8 piece, UINT
      INT8 next_x, next_y;
     UINT8 this_connect;
     UINT8 source_cur_dir;
+
+UINT8 printy  = 0;
+UINT8 printx  = 0;
+for(printy = 0; printy < 18; printy++) {
+    PRINT(0,printy,"     ",0);
+}
+
+PRINT(10,0,"    ",0);
+PRINT(10,1,"    ",0);
+PRINT(10,2,"    ",0);
+printy = 0;
+
 
     // if (piece != GP_EMPTY) { // TODO: remove?
     // Only check connections if it's a pet tile
@@ -395,6 +409,7 @@ UINT8 board_check_completed_pet_xy(INT8 start_x, INT8 start_y, UINT8 piece, UINT
              source_cur_dir <<= 1) {
 
             // Stop searching if a pet has been completed
+            // and a special-merge is *not* being used
             if ( (headtail_count >= 2) &&
                  !(flags & BRD_CHECK_FLAGS_IGNORE_PET_TYPE))
                 break;
@@ -407,7 +422,13 @@ UINT8 board_check_completed_pet_xy(INT8 start_x, INT8 start_y, UINT8 piece, UINT
                 next_x = start_x + GP_CONNECT_NEXT_X_LUT[source_cur_dir];
                 next_y = start_y + GP_CONNECT_NEXT_Y_LUT[source_cur_dir];
                 this_connect = source_cur_dir;
-
+// if (joypad() & J_SELECT) {
+//     waitpad(J_A);
+//     waitpad(J_B);
+// }
+print_num_u16(printx,printy++,(UINT16)next_x);
+print_num_u16(printx,printy++,(UINT16)next_y);
+print_num_u16(printx,printy++,(UINT16)this_connect);
                 // The original piece gets used in this loop
                 while (board_check_connected_xy(next_x, next_y, piece, &this_connect, flags)) {
 
@@ -415,6 +436,16 @@ UINT8 board_check_completed_pet_xy(INT8 start_x, INT8 start_y, UINT8 piece, UINT
                     board_tile_clear_cache_x[board_tile_clear_count] = next_x; // board_tile_clear_cache[board_tile_clear_count] = next_x + (next_y * BRD_WIDTH);
                     board_tile_clear_cache_y[board_tile_clear_count] = next_y;
                     board_tile_clear_count++;
+
+                    // Check to see if the pet is a loop with no head/tail (next position == starting position)
+                    if ((next_x == start_x) && (next_y == start_y)) {
+
+                        // If so, the pet has been completed
+                        // Now exit loop (without needing a head or tail, or dead-end )
+                        headtail_count += 2;
+                        break; // exit loop
+                    }
+
 
                     // Add current piece to the total
                     piece_count++;
@@ -426,14 +457,27 @@ UINT8 board_check_completed_pet_xy(INT8 start_x, INT8 start_y, UINT8 piece, UINT
                         next_x += GP_CONNECT_NEXT_X_LUT[this_connect];
                         next_y += GP_CONNECT_NEXT_Y_LUT[this_connect];
 
-                        // Check to see if the pet is a loop with no head/tail (next position == starting position)
-                        if ((next_x == start_x) && (next_y == start_y)) {
+// if (joypad() & J_SELECT) {
+//     waitpad(J_A);
+//     waitpad(J_B);
+// }
+if (printy >= 18) {
+    printy = 0;
+    printx +=3;
+}
+print_num_u16(printx+1,printy++,(UINT16)next_x);
+print_num_u16(printx+1,printy++,(UINT16)next_y);
+print_num_u16(printx+1,printy++,(UINT16)this_connect);
 
-                            // If so, the pet has been completed
-                            // Now exit loop (without needing a head or tail, or dead-end )
-                            headtail_count += 2;
-                            break; // exit loop
-                        }
+
+//                         // Check to see if the pet is a loop with no head/tail (next position == starting position)
+//                         if ((next_x == start_x) && (next_y == start_y))
+//                         {
+                                // // If so, the pet has been completed
+                                // // Now exit loop (without needing a head or tail, or dead-end )
+                                // headtail_count += 2;
+                                // break; // exit loop
+//                         }
                     } else {
                         // If next_connect is empty (only 1 connection, to previous tile)
                         // that means it's a HEAD or TAIL segment
@@ -445,6 +489,11 @@ UINT8 board_check_completed_pet_xy(INT8 start_x, INT8 start_y, UINT8 piece, UINT
                 } // end: while board_check_connected_xy()
             } // end: if (c & connect)
         } // end: for (c=GP_CONNECT_MIN_BITS;
+
+waitpad(J_START);
+print_num_u16(10,0,headtail_count);
+print_num_u16(10,1,piece_count);
+print_num_u16(10,2,flags);
 
         // Check if a completed pet was found
         if ( ((headtail_count >= 2) && (piece_count >= 2)) ||

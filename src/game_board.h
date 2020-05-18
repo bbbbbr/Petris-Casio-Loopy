@@ -57,9 +57,14 @@
 #define MSG_LEVEL_UP_TEXT   "LEVEL UP \n\n\n  GET\n\n READY!"
 #define MSG_LEVEL_UP_CTEXT  "LEVEL UP \n\n\n     \n\n       "
 
-#define MSG_CLEANUP_START_TEXT  "          \n\n\n   ALL\n\n  TAILS!"
+#define MSG_CLEANUP_START_TEXT    "          \n\n\n   ALL\n\n  TAILS!"
 #define MSG_CLEANUP_START_CTEXT   " CLEAN UP \n\n\n   ALL\n\n  TAILS!"
 #define MSG_CLEANUP_START_REPEAT 3
+
+#define MSG_COLLECT_START_TEXT    "         \n\n\n ALL  PET\n\n  TYPES!"
+#define MSG_COLLECT_START_CTEXT   " COLLECT \n\n\n ALL  PET\n\n  TYPES!"
+#define MSG_COLLECT_START_REPEAT 3
+
 
 #define MSG_LEVEL_UP_REPEAT 2
 

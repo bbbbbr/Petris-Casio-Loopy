@@ -34,7 +34,6 @@
 
 
 #define SPR_OPTIONS_CURSOR 0 // Cursor is sprite "0"
-#define PET_DOG_HEAD       ((GP_PET_DOG << GP_PET_UPSHIFT) | (GP_SEG_HEAD << GP_SEG_UPSHIFT))
 
 #define OPTION_MENU_X 3
 #define OPTION_CURSOR_X (2 * 8)

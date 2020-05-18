@@ -14,6 +14,8 @@
 #include <gb/gb.h>
 #include <gb/cgb.h> // Include cgb functions
 
+#include "common.h"
+
 #include "game_piece.h"
 #include "game_piece_data.h"
 #include "game_board.h"
@@ -39,6 +41,16 @@
 
 const UINT8 NEXT_PIECE_BG_TILE = TILE_ID_BOARD_NEXT_PIECE_PREVIEW_BG;
 const UINT8 NEXT_PIECE_BG_PAL  = BG_PAL_BOARD_NEXT_PIECE_PREVIEW;
+
+const UINT8 COLLECT_PET_TYPES_TILES[] = {TILES_PET_START + PET_DOG_HEAD,
+                                       TILES_PET_START + PET_CAT_HEAD,
+                                       TILES_PET_START + PET_FISH_HEAD,
+                                       TILES_PET_START + PET_SNAKE_HEAD};
+
+const UINT8 COLLECT_PET_TYPES_ATTRIBS[] = {GP_PAL_DOG,
+                                         GP_PAL_CAT,
+                                         GP_PAL_FISH,
+                                         GP_PAL_SNAKE};
 
 
 // TODO: this could be collapsed into a single set of 4
@@ -93,6 +105,8 @@ void board_gfx_init_sprites(void) {
 // TODO: rename to board_init_background(); move to board_gfx.c
 void board_gfx_init_background(void) {
 
+    UINT8 c;
+
         //set_bkg_palette(BG_PAL_0, 4, board_pets_palette); // UBYTE first_palette, UBYTE nb_palettes, UWORD *rgb_data
         //set_bkg_palette(BG_PAL_4, 4, intro_screen_palette); // UBYTE first_palette, UBYTE nb_palettes, UWORD *rgb_data
         fade_set_pal(BG_PAL_0, 4, board_pets_palette,   FADE_PAL_BKG);
@@ -131,10 +145,30 @@ void board_gfx_init_background(void) {
 
         PRINT(DISPLAY_SCORE_X,    DISPLAY_SCORE_Y - 1,    "SCORE", 0);
 
-        if (option_game_type == OPTION_GAME_TYPE_PET_CLEANUP) {
-            PRINT(DISPLAY_NUMPETS_X,  DISPLAY_NUMPETS_Y - 1,  "TAILS", 0);
-        } else {
-            PRINT(DISPLAY_NUMPETS_X,  DISPLAY_NUMPETS_Y - 1,  "PETS", 0);
+        // Game type specific background setup
+        switch (option_game_type) {
+            case OPTION_GAME_TYPE_PET_CLEANUP:
+                PRINT(DISPLAY_NUMPETS_X,  DISPLAY_NUMPETS_Y - 1,  "TAILS", 0);
+                break;
+
+            case OPTION_GAME_TYPE_COLLECT_PETS:
+
+                for (c = 0; c < ARRAY_LEN(COLLECT_PET_TYPES_TILES); c++) {
+                    // Set the preview tile area to a white background
+                    VBK_REG = 1; // Select BG tile attribute map
+                    set_bkg_tiles(DISPLAY_NUMPETS_X, DISPLAY_NUMPETS_Y - 2 + c,
+                        1, 1, &COLLECT_PET_TYPES_ATTRIBS[c]);
+
+                    VBK_REG = 0; // Re-Select regular BG tile map
+                    set_bkg_tiles(DISPLAY_NUMPETS_X, DISPLAY_NUMPETS_Y - 2 + c,
+                        1, 1, &COLLECT_PET_TYPES_TILES[c]);
+                }
+
+                break;
+
+            default:
+                PRINT(DISPLAY_NUMPETS_X,  DISPLAY_NUMPETS_Y - 1,  "PETS", 0);
+                break;
         }
 
 

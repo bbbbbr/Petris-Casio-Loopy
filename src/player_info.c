@@ -58,12 +58,24 @@ void player_info_display(void) {
     print_num_u16(DISPLAY_SCORE_X, DISPLAY_SCORE_Y, player_score, DIGITS_5);
 
     // Display number of pets completed
-    if (option_game_type == OPTION_GAME_TYPE_PET_CLEANUP) {
-        // Display Tail remaining count
-        print_num_u16(DISPLAY_NUMPETS_X, DISPLAY_NUMPETS_Y, (UINT16)game_type_cleanup_tail_count, DIGITS_5);
-    } else {
-        // Display Pet compelted count
-        print_num_u16(DISPLAY_NUMPETS_X, DISPLAY_NUMPETS_Y, player_numpets, DIGITS_5);
+    switch (option_game_type) {
+        case OPTION_GAME_TYPE_PET_CLEANUP:
+            // Display Tail remaining count
+            print_num_u16(DISPLAY_NUMPETS_X, DISPLAY_NUMPETS_Y, (UINT16)game_type_cleanup_tail_count, DIGITS_5);
+            break;
+
+        case OPTION_GAME_TYPE_COLLECT_PETS:
+            // Display pet collect remaining counts
+            print_num_u16(DISPLAY_NUMPETS_X + 1, DISPLAY_NUMPETS_Y - 2, (UINT16)game_type_collect_dog_count,   DIGITS_2);
+            print_num_u16(DISPLAY_NUMPETS_X + 1, DISPLAY_NUMPETS_Y - 1, (UINT16)game_type_collect_cat_count,   DIGITS_2);
+            print_num_u16(DISPLAY_NUMPETS_X + 1, DISPLAY_NUMPETS_Y + 0, (UINT16)game_type_collect_fish_count,  DIGITS_2);
+            print_num_u16(DISPLAY_NUMPETS_X + 1, DISPLAY_NUMPETS_Y + 1, (UINT16)game_type_collect_snake_count, DIGITS_2);
+            break;
+
+        default: // Types: Marathon & Level Up
+            // Display Pet compelted count
+            print_num_u16(DISPLAY_NUMPETS_X, DISPLAY_NUMPETS_Y, player_numpets, DIGITS_5);
+            break;
     }
 
     // TODO: remove?
@@ -87,7 +99,6 @@ void score_update(UINT16 num_tiles) {
     // TODO: player_numtiles_this_level
     player_numtiles += num_tiles;
 
-
     // == UPDATE DISPLAY INFO AREA ==
 
     // TODO: support x 10 scoring? Need to use a 24 bit Num
@@ -101,7 +112,8 @@ void score_update(UINT16 num_tiles) {
                     * (UINT16)p_game_settings->score_bonus
                     * SCORE_SCALE_FACTOR;
 
-    player_info_display();
+/// HACCCCKKKK HACK FIXME
+player_info_display();
 
     // == CHECK FOR LEVEL CHANGES ==
     //
@@ -117,6 +129,11 @@ void score_update(UINT16 num_tiles) {
 
         level_increment();
     }
+
+
+/// HACCCCKKKK HACK FIXME
+    // Update the display again so that it now correct oet count
+    player_info_display();
 }
 
 
@@ -203,6 +220,4 @@ void player_info_newgame_reset(void) {
     // OR, gameplay_speed_update() <------ ???
     // Should be called after level_counters_reset()
     game_speed_frames_per_drop_set( options_frames_per_drop_get( (UINT8)player_level) );
-
-    player_info_display();
 }

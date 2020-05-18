@@ -104,6 +104,10 @@ void gameplay_init(void) {
         board_flash_message(MSG_GET_READY_X, MSG_GET_READY_Y,
                             MSG_CLEANUP_START_TEXT, MSG_CLEANUP_START_CTEXT,
                             MSG_CLEANUP_START_REPEAT);
+    } else if (option_game_type == OPTION_GAME_TYPE_COLLECT_PETS) {
+        board_flash_message(MSG_GET_READY_X, MSG_GET_READY_Y,
+                            MSG_COLLECT_START_TEXT, MSG_COLLECT_START_CTEXT,
+                            MSG_COLLECT_START_REPEAT);
     } else {
         board_flash_message(MSG_GET_READY_X, MSG_GET_READY_Y,
                             MSG_GET_READY_TEXT, MSG_GET_READY_CTEXT,
@@ -112,6 +116,8 @@ void gameplay_init(void) {
     }
 
     gameplay_prepare_board();
+
+    player_info_display();
 
     SHOW_SPRITES;
 
@@ -135,9 +141,15 @@ void gameplay_prepare_board(void) {
 
     board_reset();
 
-    if (option_game_type == OPTION_GAME_TYPE_PET_CLEANUP) {
+    switch (option_game_type) {
+        case OPTION_GAME_TYPE_PET_CLEANUP:
             // This will (indirectly) auto-increment game_type_cleanup_tail_count
             game_board_fill_random_tails( game_type_pet_cleanup_get_tail_count( (UINT8)player_level ));
+            break;
+
+        case OPTION_GAME_TYPE_COLLECT_PETS:
+            game_type_collect_set_level_counts( (UINT8)player_level );
+            break;
     }
 
     // Generate the very first piece

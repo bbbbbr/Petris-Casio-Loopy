@@ -18,6 +18,7 @@
 #include "common.h"
 
 #include "game_board.h"
+#include "game_types.h"
 #include "game_board_special_pieces.h"
 #include "game_piece_data.h"
 #include "gfx.h"
@@ -25,6 +26,8 @@
 #include "sound.h"
 #include "player_info.h"
 #include "player_piece.h"
+
+#include "options.h"
 
 UINT8 board_pieces[BRD_SIZE];
 UINT8 board_attrib[BRD_SIZE];
@@ -240,8 +243,10 @@ void board_clear_tile_xy(INT8 x, INT8 y) {
         tile_index = x + (y * BRD_WIDTH);
 
         // Set the tail flag if the tile isn't empty and it's a tail (in any direction)
-        if (board_pieces[tile_index] != GP_EMPTY + TILES_PET_START) {
-            is_tail = ((board_pieces[tile_index] - TILES_PET_START) & GP_SEG_MASK) == GP_SEG_TAIL_BITS;
+        if (option_game_type == OPTION_GAME_TYPE_PET_CLEANUP) {
+            if (board_pieces[tile_index] != GP_EMPTY + TILES_PET_START) {
+                is_tail = ((board_pieces[tile_index] - TILES_PET_START) & GP_SEG_MASK) == GP_SEG_TAIL_BITS;
+            }
         }
 
         // Animate removal of board tile, even if blank - i,e called by a bomb/etc
@@ -282,8 +287,10 @@ void board_set_tile_xy(INT8 x, INT8 y, UINT8 piece, UINT8 attrib, UINT8 connect)
 
     if (!(piece & GP_SPECIAL_MASK)) {
 
-        if ((piece & GP_SEG_MASK) == GP_SEG_TAIL_BITS) {
-            game_type_pet_cleanup_increment_tail_count();
+        if (option_game_type == OPTION_GAME_TYPE_PET_CLEANUP) {
+            if ((piece & GP_SEG_MASK) == GP_SEG_TAIL_BITS) {
+                game_type_pet_cleanup_increment_tail_count();
+            }
         }
 
         tile_index = x + (y * BRD_WIDTH);
@@ -622,7 +629,16 @@ UINT8 board_check_completed_pet_xy(INT8 start_x, INT8 start_y, UINT8 piece, UINT
         if ( ((headtail_count >= 2) && (piece_count >= 2)) ||
              (flags & BRD_CHECK_FLAGS_IGNORE_PET_TYPE)) {
 
+            // If it's collect mode and non-special, pass along
+            // the piece to decrement the appropriate pet counter
+            if (!(flags & BRD_CHECK_FLAGS_DONT_ADD_POINTS)) {
+                if (option_game_type == OPTION_GAME_TYPE_COLLECT_PETS) {
+                    game_type_collect_decrement_pet_count(piece & GP_PET_MASK);
+                }
+            }
+
             board_handle_pet_completed(flags);
+
             return (TRUE);
         }
 

@@ -36,7 +36,6 @@
 
 #include "gameplay.h"
 
-extern UINT8 global_frame_count;
 
 UINT8 game_speed_drop_frame_counter;
 UINT8 game_speed_frames_per_drop;
@@ -163,7 +162,7 @@ void gameplay_prepare_board(void) {
 void gameplay_handle_pause(void) {
 
     // Hide the game board and player piece
-    board_hide_all(BRD_CLR_DELAY_NONE);
+// board_hide_all(BRD_CLR_DELAY_NONE);
     // TODO: CONSOLIDATE: these hides are basically a dupe of gameplay_exit_cleanup()
     game_piece_next_show(FALSE);
     player_piece_update_xy(PLAYER_PIECE_HIDE);
@@ -171,10 +170,14 @@ void gameplay_handle_pause(void) {
     player_hinting_drop_show(FALSE);
     player_hinting_pet_length_all_show(FALSE);
 
-    PRINT(BRD_ST_X + 2,
-          BRD_ST_Y + 5,
-          "PAUSED",0);
+    // PRINT(BRD_ST_X + 2,
+    //       BRD_ST_Y + 5,
+    //       "PAUSED",0);
 
+WX_REG = (BRD_ST_X * 8);
+WY_REG = (BRD_ST_Y * 8) + 7;
+
+global_is_paused = TRUE;
 
     // TODO: This could probably be done better (interrupts?)
     // Need a delay for joypad to start returning updated values
@@ -188,8 +191,11 @@ void gameplay_handle_pause(void) {
 
     UPDATE_KEYS(); // refresh key state to make sure it's in sync
 
+global_is_paused = FALSE;
+HIDE_WIN;
+
     // Redraw the board and player piece
-    board_redraw_all();
+// board_redraw_all();
     player_piece_update_xy(PLAYER_PIECE_SHOW);
     game_piece_next_show(TRUE);
     player_hinting_pet_length_all_show(TRUE);

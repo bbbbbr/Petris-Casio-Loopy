@@ -24,5 +24,7 @@ typedef enum {
 
 extern UINT8 game_state;
 
+extern UINT8 global_frame_count;
+extern UINT8 global_is_paused;
 
 #endif

@@ -14,3 +14,6 @@
 #include "common.h"
 
 UINT8 game_state;
+
+UINT8 global_frame_count;
+UINT8 global_is_paused;

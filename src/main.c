@@ -40,8 +40,6 @@ void vbl_update(void);
 void init_sound(void);
 
 UINT8 vbl_count;
-UINT8 global_frame_count; // TODO
-
 
 #define ASM_HALT \
 __asm \
@@ -66,7 +64,16 @@ void handle_non_cgb() {
 
 
 void vbl_update() {
-    vbl_count ++;
+    vbl_count++;
+    global_frame_count++;
+
+    if (global_is_paused) {
+        if (global_frame_count & 0x01) {
+            SHOW_WIN;
+        } else {
+            HIDE_WIN;
+        }
+    }
 
     // TODO: animate can be called from here instead to make it independent of game pause/etc
     // if (game_state == GAME_PLAYING)
@@ -106,6 +113,7 @@ void init (void) {
 
     game_state = GAME_INTRO_INIT;
     global_frame_count = 0;
+    global_is_paused = FALSE;
 
     DISPLAY_ON;
 }
@@ -121,7 +129,7 @@ void main(void){
         if(!vbl_count)
             wait_vbl_done();
         vbl_count = 0;
-        global_frame_count++; // TODO: share this with game_player
+//        global_frame_count++; // TODO: share this with game_player
 
         // Handle keyboard input
         UPDATE_KEYS();

@@ -153,7 +153,7 @@ void main(void){
 
             case GAME_INTRO_INIT:
 
-                MusicStop();
+                // MusicStop();
                 intro_screen_init();
                 MusicPlay(boss_fight_mod_Data, GBT_LOOP_YES);
                 game_state = GAME_INTRO;
@@ -171,7 +171,7 @@ void main(void){
 
 
             case GAME_OPTIONS_INIT:
-                MusicStop();
+                // MusicStop();
                 options_screen_init();
                 // Options screen will re-start music if music option = ON
 
@@ -185,7 +185,7 @@ void main(void){
 
 
             case GAME_READY_TO_START:
-                MusicStop();
+                // MusicStop();
                 gameplay_init();
 
                 MusicUpdateStatus();

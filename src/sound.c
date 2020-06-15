@@ -72,7 +72,12 @@ void MusicUpdateStatus() {
         MusicStop();
 }
 
+
 void update_gbt_music() {
     gbt_update();
     // REFRESH_BANK; // WARNING: re-enable if using banking with an MBC
+// __asm \
+//   nop \
+// __endasm;
+
 }

@@ -282,6 +282,8 @@ void gameplay_handle_input(void) {
     // Toggle Pet Length overlay
     if (KEY_TICKED(J_SELECT)) {
 
+        board_hide_all(BRD_CLR_DELAY_NONE);
+        board_redraw_all();
         if (option_game_type == OPTION_GAME_TYPE_LONG_PET) {
             hinting_petlength_turn_on();
         }

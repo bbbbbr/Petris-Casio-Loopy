@@ -83,10 +83,13 @@ void board_hide_all(UINT16 delay_amount) {
 
     INT8 y;
 
+// set_interrupts(VBL_IFLAG);
+// disable_interrupts();
     // for (y = BRD_ST_Y; y < (BRD_ST_Y + BRD_HEIGHT); y++) {
     // Clear board from bottom up
     for (y = BRD_END_Y; y >= BRD_ST_Y; y--) {
 
+// disable_interrupts();
         // Update BG Attribs from Game Board
         VBK_REG = 1;
         set_bkg_tiles(BRD_ST_X, y,
@@ -95,7 +98,6 @@ void board_hide_all(UINT16 delay_amount) {
 
         // Update BG Tilemap from Game Board
         VBK_REG = 0;
-
         if (delay_amount) {
             set_bkg_tiles(BRD_ST_X, y,
                           sizeof(board_x_row), 1,
@@ -107,12 +109,24 @@ void board_hide_all(UINT16 delay_amount) {
         set_bkg_tiles(BRD_ST_X, y,
                       sizeof(board_blank_row), 1,
                       &board_blank_row[0]);
+// enable_interrupts();
     }
+// enable_interrupts();
+// set_interrupts(VBL_IFLAG | TIM_IFLAG);
 }
 
 
 // Redraws the game board from the game board arrays
 void board_redraw_all(void) {
+// set_interrupts(VBL_IFLAG);
+// disable_interrupts();
+
+disable_interrupts();
+    // Update BG Tilemap from Game Board
+    VBK_REG = 0; // Re-Select regular BG tile map
+    set_bkg_tiles(BRD_ST_X, BRD_ST_Y,
+                  BRD_WIDTH, BRD_HEIGHT,
+                  &board_pieces[0]);
 
     // Update BG Attrib Map from Game Board
     VBK_REG = 1; // Select BG tile attribute map
@@ -120,11 +134,12 @@ void board_redraw_all(void) {
                   BRD_WIDTH, BRD_HEIGHT,
                   &board_attrib[0]);
 
-    // Update BG Tilemap from Game Board
-    VBK_REG = 0; // Re-Select regular BG tile map
-    set_bkg_tiles(BRD_ST_X, BRD_ST_Y,
-                  BRD_WIDTH, BRD_HEIGHT,
-                  &board_pieces[0]);
+    VBK_REG = 0;
+
+enable_interrupts();
+
+// enable_interrupts();
+// set_interrupts(VBL_IFLAG | TIM_IFLAG);
 }
 
 

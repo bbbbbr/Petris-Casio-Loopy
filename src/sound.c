@@ -74,7 +74,9 @@ void MusicUpdateStatus() {
 
 
 void update_gbt_music() {
+    //disable_interrupts();
     gbt_update();
+    //enable_interrupts();
     // REFRESH_BANK; // WARNING: re-enable if using banking with an MBC
 // __asm \
 //   nop \

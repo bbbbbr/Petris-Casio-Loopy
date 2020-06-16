@@ -71,6 +71,7 @@ void handle_non_cgb() {
 void vbl_update() {
     vbl_count ++;
 
+    update_gbt_music();
     // TODO: animate can be called from here instead to make it independent of game pause/etc
     // if (game_state == GAME_PLAYING)
     //     board_gfx_tail_animate();
@@ -104,7 +105,8 @@ void init_interrupts() {
     #endif
         TAC_REG = 0x04U;
 
-    set_interrupts(VBL_IFLAG | TIM_IFLAG);
+    // set_interrupts(VBL_IFLAG | TIM_IFLAG);
+    set_interrupts(VBL_IFLAG);
 
     enable_interrupts();
 }
@@ -155,7 +157,7 @@ void main(void){
 
                 // MusicStop();
                 intro_screen_init();
-                MusicPlay(boss_fight_mod_Data, GBT_LOOP_YES);
+                //MusicPlay(boss_fight_mod_Data, GBT_LOOP_YES);
                 game_state = GAME_INTRO;
                 break;
 

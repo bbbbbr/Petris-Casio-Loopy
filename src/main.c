@@ -203,7 +203,8 @@ void main(void){
                 // TODO: add some animation / sounds for game ended
                 MusicStop();
                 gameplay_handle_gameover_screen();
-                PLAY_SOUND_GAME_OVER;
+                // PLAY_SOUND_GAME_OVER;
+                MusicPlay(thesadtruth_mod_Data, GBT_LOOP_NO);
 
                 game_state = GAME_OVER_SCREEN;
                 break;

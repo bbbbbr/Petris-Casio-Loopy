@@ -16,6 +16,7 @@
 #include <rand.h>
 
 #include "common.h"
+#include "serial_link.h"
 
 #include "audio_common.h"
 #include "gbt_player.h"
@@ -38,12 +39,15 @@
 #include "game_board.h"
 #include "game_board_gfx.h"
 #include "game_types.h"
+#include "gameover_message.h"
 
 #include "gameplay.h"
 
 UINT8 game_speed_drop_frame_counter;
 UINT8 game_speed_frames_per_drop;
 UINT16 game_crunchup_counter;
+UINT8 volatile game_crunchups_enqueued;
+UINT8 volatile game_is_paused;
 
 
 #define KEY_REPEAT_START               0
@@ -79,15 +83,6 @@ void gameplay_drop_speed_update(void) {
 
 
 
-// Turning this off for now since it's just a pass-through
-// void gameplay_handle_gameover_screen(void) {
-//
-//     // OPTIONAL:
-//     board_gameover_animate();
-// }
-
-
-
 void gameplay_exit_cleanup(void) {
 
     fade_start(FADE_OUT);
@@ -98,7 +93,7 @@ void gameplay_exit_cleanup(void) {
     player_hinting_special_show(FALSE);
     player_hinting_drop_show(FALSE);
     hinting_petlength_reset();
-    board_gameover_animate_reset();
+    gameover_message_reset();
 }
 
 
@@ -106,7 +101,12 @@ void gameplay_exit_cleanup(void) {
 void gameplay_init(void) {
 
     // Initialize the random number generator
-    initarand(DIV_REG);
+    // Use shared seed value if connected by link
+    if (link_status == LINK_STATUS_CONNECTED) {
+        initarand(link_rand_init);
+    } else {
+        initarand(DIV_REG);
+    }
 
     game_types_init(); // Call before board_gfx_init()
 
@@ -155,6 +155,7 @@ void gameplay_init(void) {
     game_speed_drop_frame_counter = GAME_SPEED_DROP_FRAME_COUNTER_RESET;
 
     game_crunchup_counter = GAME_CRUNCHUP_FRAME_COUNTER_RESET;
+    game_crunchups_enqueued = 0;
 }
 
 
@@ -169,7 +170,7 @@ void gameplay_prepare_board(void) {
         // This will (indirectly) auto-increment game_type_cleanup_tail_count
         game_board_fill_random_tails( game_type_pet_cleanup_get_tail_count(),
                                       BRD_MIN_Y_RANDOM_FILL,
-                                      BRD_TAIL_ADD_DELAY_YES);
+                                      BRD_TAIL_ADD_NORMAL);
 
         // Give the player a brief moment to see the board
         // before gameplay starts. Helpful on higher levels
@@ -180,7 +181,7 @@ void gameplay_prepare_board(void) {
             // Generate some random pieces on the bottom row
         game_board_fill_random_tails(GAME_TYPE_CRUNCH_UP_TAIL_COUNT_ADD,
                                      BRD_MAX_Y,
-                                     BRD_TAIL_ADD_DELAY_YES);
+                                     BRD_TAIL_ADD_NORMAL);
     }
 
     // Generate the very first piece
@@ -221,13 +222,23 @@ void gameplay_handle_pause(void) {
           "PAUSED",0);
 
 
+    // Wait until unpaused by player
+    // or unpause send over serial link
+    waitpadticked_lowcpu(J_START, &game_is_paused);
 
-    waitpad_lowcpu(J_START, J_WAIT_ALL_RELEASED); // Wait until Start is released
+    // If unpause was triggered by button
+    // then state will still be paused, so clear it
+    if (game_is_paused == TRUE) {
 
-    waitpad_lowcpu(J_START, J_WAIT_ANY_PRESSED);  // Wait for start and then wait again until it's released
-    waitpad_lowcpu(J_START, J_WAIT_ALL_RELEASED);
+            __critical {
+                game_is_paused = FALSE;
+            }
 
-    UPDATE_KEYS(); // refresh key state to make sure it's in sync
+            // If 2 Player then send unpause
+            if (link_status == LINK_STATUS_CONNECTED) {
+                 LINK_SEND( LINK_CMD_UNPAUSE);
+            }
+    }
 
     // Redraw the board and player piece
     board_redraw_all();
@@ -305,8 +316,24 @@ void gameplay_handle_input(void) {
     }
 
 
-    // Pause
-    if (KEY_TICKED(J_START)) {
+    // Pause when Start is pressed
+    // or if triggered over serial link
+    if (KEY_TICKED(J_START) || game_is_paused) {
+
+        // Update paused state. It will be:
+        // * FALSE if triggered locally
+        // * TRUE if triggered over serial link
+        if (game_is_paused == FALSE) {
+            __critical {
+
+                game_is_paused = TRUE;
+
+                // If 2 Player then send pause
+                if (link_status == LINK_STATUS_CONNECTED) {
+                     LINK_SEND(LINK_CMD_PAUSE);
+                }
+            }
+        }
 
         gameplay_handle_pause();
     }
@@ -394,12 +421,10 @@ void gameplay_update(void) {
             hinting_petlength_show(); // TODO: rename to _update or _showhide
     }
 
-    // Handle crunch up if needed
-    // TODO: LINK VS PLAY: || (crunchups_queued))
-    if (option_game_type == OPTION_GAME_TYPE_CRUNCH_UP) {
-        gameplay_crunchup_update();
-    }
+    // This should be called after gameplay_gravity_update
+    gameplay_crunchup_update();
 }
+
 
 
 void gameplay_gravity_update(void) {
@@ -427,17 +452,43 @@ void gameplay_gravity_update(void) {
 }
 
 
-// TODO: find ways to share counter with other timer based actions
 void gameplay_crunchup_update(void) {
 
-    // Crunch up happens ~once every 10 seconds
-    game_crunchup_counter++;
+    // Update crunch-up counter if needed
+    if (option_game_type == OPTION_GAME_TYPE_CRUNCH_UP) {
 
-    // This needs to be more like 45 * 13 = 585
-    // could piggy back on tail animation counter
-    if (game_crunchup_counter >= GAME_CRUNCHUP_FRAME_THRESHOLD) {
+        // Crunch up happens ~once every 10 seconds
+        game_crunchup_counter++;
 
-        game_crunchup_counter = GAME_CRUNCHUP_FRAME_COUNTER_RESET;
+        // Once the threshold is crossed, queue a crunch-up and reset the counter
+        if (game_crunchup_counter >= GAME_CRUNCHUP_FRAME_THRESHOLD) {
+            game_crunchup_counter = GAME_CRUNCHUP_FRAME_COUNTER_RESET;
+
+            SCX_REG = 0;
+            // This var may also be modified in the SIO isr,
+            // so protect it when making changes
+            __critical {
+                game_crunchups_enqueued++;
+            }
+        }
+        else if (game_crunchup_counter > (GAME_CRUNCHUP_FRAME_THRESHOLD - 15)) {
+            // Shake the board for 1/4 of a second before the crunch up happens
+            SCX_REG = sys_time & 0x03;
+        }
+    }
+
+    // Crunch-ups can be triggered by
+    // * Elapsed time in game type: OPTION_GAME_TYPE_CRUNCH_UP
+    // * 2 Player vs serial link in *ANY GAME TYPE*, sent by the other versus player
+    while (game_crunchups_enqueued) {
+        // This var may also be modified in the SIO isr,
+        // so protect it when making changes
+        __critical {
+            game_crunchups_enqueued--;
+        }
+
+        PLAY_SOUND_CRUNCH_UP;
+        // TODO: pass the var as an argument and loop inside the function instead?
         board_crunch_up();
     }
 }

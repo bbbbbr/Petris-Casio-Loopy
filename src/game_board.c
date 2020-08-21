@@ -18,6 +18,7 @@
 
 #include "audio_common.h"
 #include "common.h"
+#include "serial_link.h"
 
 #include "game_board.h"
 #include "game_board_special_pieces.h"
@@ -141,9 +142,6 @@ void board_crunch_up(void) {
     UINT8 row_cur;
     UINT8 row_below;
 
-    // TODO: Make a sound to signal the incoming crunch-up
-    //       Maybe also shake board
-
     // Check for end of game condition, any pieces
     // in the copy-up top row trigger game-over
     for (x=0; x < BRD_WIDTH; x++) {
@@ -152,6 +150,7 @@ void board_crunch_up(void) {
         }
     }
 
+    // Make sure the game hasn't ended (per test above)
     if (game_state != GAME_ENDED) {
 
         // Intialize array offsets to start of top row
@@ -194,25 +193,10 @@ void board_crunch_up(void) {
         // (will not get shifted if it's top-row)
         player_piece_move(0, -1);
 
-
         // Generate some random pieces on the bottom row
         game_board_fill_random_tails(GAME_TYPE_CRUNCH_UP_TAIL_COUNT_ADD,
                                      BRD_MAX_Y,
-                                     BRD_TAIL_ADD_DELAY_NO);
-
-// TODO: remove call to fill_random_tails()
-// And replace with simplified version which:
-// - To prevent "unfair" results of adding piece to bottom
-//   (Blocks/ruins pet creation if it's a mismatched piece)
-// * Checks if above connected has down arrow
-//   ? Increments by one if possible to try another
-//   ?? Changes color of piece to match it
-//       - but that would create a loophole that could be exploited
-//         - is that necessarily bad?
-//   ?? Rotates piece on it's side or facing down?
-//   ?? Changes it to a matching-color Torso?
-//   * Checks for pet completion
-
+                                     BRD_TAIL_ADD_CRUNCHUP);
 
     } // end: if (game_state != GAME_ENDED)
 }
@@ -434,14 +418,15 @@ void board_handle_new_piece(INT8 x, INT8 y, UINT8 piece, UINT8 connect) {
 }
 
 
-void game_board_fill_random_tails(UINT8 tail_count, INT8 board_min_y, UINT8 delay_enabled) {
+void game_board_fill_random_tails(UINT8 piece_count, INT8 board_min_y, UINT8 add_mode) {
 
     UINT8 x, y;
     UINT8 piece;
     UINT8 attrib;
-    UINT8 connect;
+    UINT8 index;
+    UINT8 pet_type_bits, body_seg;
 
-    while (tail_count) {
+    while (piece_count) {
 
         // Choose X and Y coordinates randomly
         // and within board bounds
@@ -449,36 +434,53 @@ void game_board_fill_random_tails(UINT8 tail_count, INT8 board_min_y, UINT8 dela
         // (Old style used DIV_REG instead of rand())
         // x = (UINT8)DIV_REG % (BRD_WIDTH + 1);
         // y = ((UINT8)DIV_REG % (BRD_HEIGHT - BRD_MIN_Y_RANDOM_FILL + 1)) + BRD_MIN_Y_RANDOM_FILL ;
-        x = (UINT8)rand() % (BRD_WIDTH + 1);
-        y = ((UINT8)rand() % (BRD_HEIGHT - board_min_y + 1)) + board_min_y;
+        x = (UINT8)rand() % BRD_WIDTH;
+        y = ((UINT8)rand() % (BRD_HEIGHT - board_min_y)) + board_min_y;
+        index = x + (y * BRD_WIDTH);
 
         // Loop until the randomly selected spot is free
-        if (board_piece_get_xy(x, y, &piece, &connect)) {
+        if (board_pieces[index] == (GP_EMPTY + TILES_PET_START)) {
 
-            if (piece == (GP_EMPTY + TILES_PET_START)) {
+            // Default is to add tail segment of random pet type
+            pet_type_bits = (UINT8)rand() & GP_PET_MASK_NOSHIFT;
+            body_seg = GP_SEG_TAIL;
 
-                // Only decrement the count of added tails
-                // once one is successfully placed on the board
-                tail_count--;
+            // If this is a crunch-up addition then avoid creating
+            // un-completable pets by adding matching torso pieces
+            // if there is a connecting pieve above
+            // NOTE: assumption is made here that ALWAYS (y > 0)
+            if (add_mode == BRD_TAIL_ADD_CRUNCHUP) {
 
-                // piece = (((UINT8)DIV_REG & GP_PET_MASK_NOSHIFT) << GP_PET_UPSHIFT) |
-                piece = (((UINT8)rand() & GP_PET_MASK_NOSHIFT) << GP_PET_UPSHIFT) |
-                        (GP_SEG_TAIL << GP_SEG_UPSHIFT) |
-                        (GP_ROT_VERT << GP_ROT_UPSHIFT);
+                // Is piece above occupied and connected to this slot?
+                if (board_connect[index - BRD_WIDTH] & GP_CONNECT_DOWN_BITS) {
 
-                // Set palette based on pet type (CGB Pal bits are 0x07)
-                // And mirror bits based on rotation setting from LUT
-                attrib = ((piece & GP_PET_MASK) >> GP_PET_UPSHIFT) // Palette
-                          | GP_ROT_LUT_ATTR[GP_ROTATE_270];               // Rotation sprite mirror bits
-
-                board_set_tile_xy((INT8)x, (INT8)y,
-                                  piece, attrib,
-                                  player_piece_connect_get(piece, GP_ROTATE_270));
-
-                if (delay_enabled) {
-                    PLAY_SOUND_SQUEEK;
-                    delay(150);
+                    pet_type_bits = board_pieces[index - BRD_WIDTH] & GP_PET_MASK_NOSHIFT;
+                    body_seg = GP_SEG_TORSO;
                 }
+            }
+
+            // Only decrement the count of added tails
+            // once one is successfully placed on the board
+            piece_count--;
+
+            // piece = ((UINT8)DIV_REG & GP_PET_MASK_NOSHIFT) |
+            piece = (pet_type_bits) |
+                    (body_seg << GP_SEG_UPSHIFT) |
+                    (GP_ROT_VERT << GP_ROT_UPSHIFT);
+
+            // Set palette based on pet type (CGB Pal bits are 0x07)
+            // And mirror bits based on rotation setting from LUT
+            attrib = ((piece & GP_PET_MASK) >> GP_PET_UPSHIFT) // Palette
+                      | GP_ROT_LUT_ATTR[GP_ROTATE_270];               // Rotation sprite mirror bits
+
+            board_set_tile_xy((INT8)x, (INT8)y,
+                              piece, attrib,
+                              player_piece_connect_get(piece, GP_ROTATE_270));
+
+            // Don't delay and add sounds if it's a crunch up
+            if (add_mode != BRD_TAIL_ADD_CRUNCHUP) {
+                PLAY_SOUND_SQUEEK;
+                delay(150);
             }
         }
     }
@@ -546,12 +548,22 @@ void board_handle_pet_completed(UINT8 flags) {
 
         // Play special sound (per tile) when more than N tiles have been cleared for a pet
         // Suppress bonus threshold on special pieces
-        if (flags & BRD_CHECK_FLAGS_IGNORE_PET_TYPE)
+        if (flags & BRD_CHECK_FLAGS_IGNORE_PET_TYPE) {
             PLAY_SOUND_TILE_CLEAR_SPECIAL; // Special piece no points sound (bomb)
-        else if (c >= BRD_TILE_COUNT_BONUS_SOUND_THRESHOLD)
+        }
+        else if (c >= BRD_TILE_COUNT_BONUS_SOUND_THRESHOLD) {
             PLAY_SOUND_TILE_CLEAR_BONUS; // Bonus sound
-        else
+
+            // If in 2 player versus mode, send a crunch-up to the other player
+            // Only send once, right as the threshold is met
+            if ((c == BRD_TILE_COUNT_BONUS_SOUND_THRESHOLD) &&
+                (link_status == LINK_STATUS_CONNECTED)) {
+                LINK_SEND(LINK_CMD_CRUNCHUP);
+            }
+        }
+        else {
             PLAY_SOUND_TILE_CLEAR_NORMAL; // Normal sound
+        }
 
         board_clear_tile_xy(board_tile_clear_cache_x[c],
                             board_tile_clear_cache_y[c]);

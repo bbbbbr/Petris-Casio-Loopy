@@ -40,12 +40,13 @@
 #define LINK_CMD_INITIATE       0x10U  // Signal that player is ready to start
 #define LINK_CMD_RANDLO         0x20U  // Random Number low bits
 #define LINK_CMD_RANDHI         0x30U  // Random Number high bits
-#define LINK_CMD_READY          0x40U  // Signal that player is ready to start
+#define LINK_CMD_READYWAIT      0x40U  // Signal that player is ready to start
+#define LINK_CMD_READYGO        0x50U  // Signal that player is ready to start
 // IN-GAME commands
-#define LINK_CMD_OPPONENT_LOST  0x50U  // Signal that player lost, so opponent won
-#define LINK_CMD_CRUNCHUP       0x60U  // Send a crunch-up to the othe player
-#define LINK_CMD_PAUSE          0x70U  // Send Pause
-#define LINK_CMD_UNPAUSE        0x80U  // Send Un-Pause
+#define LINK_CMD_OPPONENT_LOST  0x60U  // Signal that player lost, so opponent won
+#define LINK_CMD_CRUNCHUP       0x70U  // Send a crunch-up to the othe player
+#define LINK_CMD_PAUSE          0x80U  // Send Pause
+#define LINK_CMD_UNPAUSE        0x90U  // Send Un-Pause
 //
 #define LINK_CMD_IGNORE         0xF0U  // Keep as 0xF0 since Link with No external GB may return 0xFF
 

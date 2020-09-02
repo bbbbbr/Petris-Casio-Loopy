@@ -311,6 +311,11 @@ void options_screen_init(void) {
 
     // Update music status to match option menu setting
     MusicUpdateStatus();
+
+    // Make sure serial link is ready
+    link_reset();
+    link_enable();
+
 }
 
 
@@ -329,6 +334,9 @@ void options_screen_try_gamestart(void) {
         // If link failed then exit without starting game
         if (link_status != LINK_STATUS_CONNECTED)
             return;
+    } else {
+        // If not linked, turn off the serial link
+        link_disable();
     }
 
     // If 2P versus is not enabled start immediately
@@ -339,6 +347,13 @@ void options_screen_try_gamestart(void) {
 
 
 void options_screen_handle(void) {
+
+    // Start game if triggered by other linked player
+    if (link_status == LINK_STATUS_CONNECTED) {
+        // If 2P versus is connected then start game
+        options_screen_exit_cleanup();
+        game_state = GAME_READY_TO_START;
+    }
 
     // Cursor Updates
     if (KEY_TICKED(J_UP)) {

@@ -28,13 +28,15 @@
 //
 
 //
-// State A   :      Command     : State B   : Data
-// -----------------------------------------------
-// RESET     :                  : RESET     :
-// RESET     :  -> Initiate ->  : RESET     :
-// RESET     :  <- Rand Lo  <-  : RESET     : Rand Lo
-// RESET     :  -> Rand Hi  ->  : RESET     : Rand Hi
-// CONNECTED :  <- Ready    <-  : CONNECTED : Game Type
+//  Initiator                        Follower
+//  State A   :      Command      :  State B   : Data
+//  -------------------------------------------------
+//  RESET     :                   :  RESET     :
+//  RESET     :  -> Initiate  ->  :  RESET     :
+//  RESET     :  <- Rand Lo   <-  :  RESET     : Rand Lo
+//  RESET     :  -> Rand Hi   ->  :  RESET     : Rand Hi
+// +CONNECTED :  <- Ready Wait <- :  RESET     :
+//  CONNECTED :  -> Ready Go   -> : +CONNECTED : Game Type
 //
 
 // From the docs...
@@ -152,18 +154,18 @@ void link_isr(void) {
                     // Save incoming hi nybble of shared random number seed
                     game_rand_init |= (link_data & LINK_DATA_MASK) << 4;
 
-                    // Send ready to start & Game Type
-                    //
-                    // Wait until the transfer is complete then set link status to connected.
-                    // That should happen at a similar-ish time
-                    // as the other player processing LINK_CMD_READY
-                    LINK_SEND(LINK_CMD_READY | (option_game_type & LINK_DATA_MASK));
-                    while (SC_REG & LINK_XFER_START);
+                    // Send ready to start
+                    LINK_SEND(LINK_CMD_READYWAIT);
+                    break;
 
+                case LINK_CMD_READYWAIT:
+                    // This notifies Initiator that Follower
+                    // is in the waiting-ready-to-start state
+                    // and allows the Initiator to send LINK_CMD_READYGO
                     link_status = LINK_STATUS_CONNECTED;
                     break;
 
-                case LINK_CMD_READY:
+                case LINK_CMD_READYGO:
                     // Save/apply incoming game type
                     option_game_type = link_data & LINK_DATA_MASK;
 
@@ -172,6 +174,7 @@ void link_isr(void) {
                     // at a similar-ish time
                     link_status = LINK_STATUS_CONNECTED;
                     break;
+
             } // if (link_status == LINK_STATUS_RESET)
 
         } else if (link_status == LINK_STATUS_CONNECTED) {
@@ -268,4 +271,22 @@ void link_try_connect(void) {
     // Close the popup window
     SET_PRINT_TARGET(PRINT_BKG);
     status_win_popup_hide();
+
+    // Now that the popup window is closed...
+    //
+    // If connection was successful then the other player is
+    // ready and waiting. Send signal to start now
+    if (link_status == LINK_STATUS_CONNECTED) {
+        // Send Return Ready Command and send game-type
+        LINK_SEND(LINK_CMD_READYGO | (option_game_type & LINK_DATA_MASK));
+
+        // Have to disable interrupts here to catch the TX flag transition
+        // since the SIO ISR would otherwise reset it hi to receive-waiting state
+        disable_interrupts();
+            while (SC_REG & LINK_XFER_START);
+            // Return to receive-waiting state
+            LINK_WAIT_RECEIVE;
+        enable_interrupts();
+    }
+
 }

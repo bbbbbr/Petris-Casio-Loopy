@@ -78,6 +78,41 @@ const UINT8 gp_dissolve_anim[] = {GP_DISSOLVE_1 + TILES_PET_START,
                                   GP_DISSOLVE_3 + TILES_PET_START};
 
 
+// TODO: DEBUG
+#include "input.h"
+
+void board_showconnect(void) {
+
+    UINT8 x, y;
+    UINT8 con;
+    char str[2];
+    str[1] = 0;
+
+
+    for (y = 0; y < BRD_HEIGHT; y++) {
+        for (x = 0; x < BRD_WIDTH; x++) {
+
+            con = board_connect[x + (y * BRD_WIDTH)];
+            if (con < 10)
+                str[0] = '0' + con;
+            else
+                str[0] = 'A' + (con - 10);
+
+                PRINT(x + BRD_ST_X ,
+                      y + BRD_ST_Y ,
+                      str,0);
+
+
+            // board_pieces[c] = GP_EMPTY + TILES_PET_START;
+            // board_attrib[c] = GP_PAL_EMPTY;
+            // board_connect[c] = GP_CONNECT_NONE_BITS;
+        }
+    }
+
+    waitpadticked_lowcpu(J_SELECT, NULL);
+    board_redraw_all();
+}
+
 
 // Initializes global vars for board
 void board_init(void) {
@@ -248,32 +283,6 @@ void board_reset(void) {
     board_redraw_all();
 }
 
-
-
-#include "input.h"
-
-void board_showconnect(void) {
-
-    static UINT8 x, y;
-
-    for (y = 0; y < BRD_HEIGHT; y++) {
-        for (x = 0; x < BRD_WIDTH; x++) {
-
-            // board_clear_tile_xy(check_x,check_y);
-            print_num_u16(x + BRD_ST_X ,
-                          y + BRD_ST_Y ,
-                          //board_pieces[x + (y * BRD_WIDTH)],1);
-                          board_connect[x + (y * BRD_WIDTH)],1);
-
-            // board_pieces[c] = GP_EMPTY + TILES_PET_START;
-            // board_attrib[c] = GP_PAL_EMPTY;
-            // board_connect[c] = GP_CONNECT_NONE_BITS;
-        }
-    }
-
-    waitpadticked_lowcpu(J_SELECT, NULL);
-    board_redraw_all();
-}
 
 
 void board_flash_message(UINT8 start_x, UINT8 start_y, char * text, char * ctext, UINT8 repeat) {

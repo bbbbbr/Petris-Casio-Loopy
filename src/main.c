@@ -151,14 +151,15 @@ void init (void) {
 
     init_interrupts();
 
+    magic_code_reset();
+
     DISPLAY_ON;
 }
 
 
 void main(void){
-    init();
 
-    magic_code_reset();
+    init();
 
     #ifdef DEBUG_SKIP_INTRO
         game_state = GAME_OPTIONS_INIT;

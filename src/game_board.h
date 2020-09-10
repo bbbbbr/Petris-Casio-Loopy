@@ -102,12 +102,14 @@ void board_crunch_up(void);
 void board_draw_tile_xy(INT8, INT8, UINT8);
 
 void board_reset(void);
+void board_showconnect(void);
 void board_clear_tile_xy(INT8, INT8);
 
 void board_flash_message(UINT8, UINT8, char *, char *, UINT8);
 
 INT8 board_find_lowest_open_in_column(INT8, INT8);
-UINT8 board_check_open_xy(INT8, INT8);
+// UINT8 board_check_open_xy(INT8, INT8);
+#define BOARD_CHECK_OPEN_XY(board_x,board_y) (board_pieces[board_x + (board_y * BRD_WIDTH)] == (GP_EMPTY + TILES_PET_START))
 void board_set_tile_xy(INT8, INT8, UINT8, UINT8, UINT8);
 void board_handle_new_piece(INT8, INT8, UINT8, UINT8);
 

@@ -89,7 +89,7 @@ void board_init(void) {
 // * Called during PAUSE
 void board_hide_all(UINT16 delay_amount) {
 
-    INT8 y;
+    static INT8 y;
 
     // for (y = BRD_ST_Y; y < (BRD_ST_Y + BRD_HEIGHT); y++) {
     // Clear board from bottom up
@@ -151,9 +151,9 @@ void board_redraw_all(void) {
 // go past the top of the game board
 void board_crunch_up(void) {
 
-    INT8  x, y;
-    UINT8 row_cur;
-    UINT8 row_below;
+    static INT8  x, y;
+    static UINT8 row_cur;
+    static UINT8 row_below;
 
     // Check for end of game condition, any pieces
     // in the copy-up top row trigger game-over
@@ -234,7 +234,7 @@ void board_draw_tile_xy(INT8 x, INT8 y, UINT8 tile_index) {
 
 void board_reset(void) {
 
-    UINT8 c;
+    static UINT8 c;
 
     for (c=0; c < (BRD_WIDTH * BRD_HEIGHT); c++) {
         // Set pet piece
@@ -245,6 +245,33 @@ void board_reset(void) {
         board_connect[c] = GP_CONNECT_NONE_BITS;
     }
 
+    board_redraw_all();
+}
+
+
+
+#include "input.h"
+
+void board_showconnect(void) {
+
+    static UINT8 x, y;
+
+    for (y = 0; y < BRD_HEIGHT; y++) {
+        for (x = 0; x < BRD_WIDTH; x++) {
+
+            // board_clear_tile_xy(check_x,check_y);
+            print_num_u16(x + BRD_ST_X ,
+                          y + BRD_ST_Y ,
+                          //board_pieces[x + (y * BRD_WIDTH)],1);
+                          board_connect[x + (y * BRD_WIDTH)],1);
+
+            // board_pieces[c] = GP_EMPTY + TILES_PET_START;
+            // board_attrib[c] = GP_PAL_EMPTY;
+            // board_connect[c] = GP_CONNECT_NONE_BITS;
+        }
+    }
+
+    waitpadticked_lowcpu(J_SELECT, NULL);
     board_redraw_all();
 }
 
@@ -277,8 +304,8 @@ void board_flash_message(UINT8 start_x, UINT8 start_y, char * text, char * ctext
 // Used for drop-piece hinting
 INT8 board_find_lowest_open_in_column(INT8 x, INT8 y_st) {
 
-    UINT8 offset; // 8 bits is ok sicne the board array is smaller than 255
-    INT8 y;
+    static UINT8 offset; // 8 bits is ok sicne the board array is smaller than 255
+    static INT8 y;
 
     // Start at the Y location of the player piece in board array
     y = y_st;
@@ -302,18 +329,23 @@ INT8 board_find_lowest_open_in_column(INT8 x, INT8 y_st) {
 
 // Given X, Y board coordinate, is it open for a piece to move there?
 // Note: Bounds checking happens in calling function
+// SEE: BOARD_CHECK_OPEN_XY(x,y)
+/*
 UINT8 board_check_open_xy(INT8 x, INT8 y) {
 
     return (board_pieces[x + (y * BRD_WIDTH)] == (GP_EMPTY + TILES_PET_START));
 }
+*/
 
 
 
 void board_clear_tile_xy(INT8 x, INT8 y) {
 
-    UINT8 tile_index;
-    UINT8 c;
-    UINT8 is_tail = FALSE;
+    static UINT8 tile_index;
+    static UINT8 c;
+    static UINT8 is_tail;
+
+    is_tail = FALSE;
 
     if ((x >= BRD_MIN_X) &&
         (x <= BRD_MAX_X) &&
@@ -362,7 +394,7 @@ void board_clear_tile_xy(INT8 x, INT8 y) {
 // Note: No bounds checking here
 void board_set_tile_xy(INT8 x, INT8 y, UINT8 piece, UINT8 attrib, UINT8 connect) {
 
-    UINT8 tile_index;
+    static UINT8 tile_index;
 
     if (!(piece & GP_SPECIAL_MASK)) {
 
@@ -421,11 +453,11 @@ void board_handle_new_piece(INT8 x, INT8 y, UINT8 piece, UINT8 connect) {
 
 void game_board_fill_random_tails(UINT8 piece_count, INT8 board_min_y, UINT8 add_mode) {
 
-    UINT8 x, y;
-    UINT8 piece;
-    UINT8 attrib;
-    UINT8 index;
-    UINT8 pet_type_bits, body_seg;
+    static UINT8 x, y;
+    static UINT8 piece;
+    static UINT8 attrib;
+    static UINT8 index;
+    static UINT8 pet_type_bits, body_seg;
 
     while (piece_count) {
 
@@ -491,7 +523,7 @@ void game_board_fill_random_tails(UINT8 piece_count, INT8 board_min_y, UINT8 add
 
 UINT8 board_piece_get_xy(INT8 x, INT8 y, UINT8 * p_piece, UINT8 * p_connect) {
 
-    UINT8 tile_index;
+    static UINT8 tile_index;
 
     if ((x >= BRD_MIN_X) &&
         (x <= BRD_MAX_X) &&
@@ -511,7 +543,7 @@ UINT8 board_piece_get_xy(INT8 x, INT8 y, UINT8 * p_piece, UINT8 * p_connect) {
 
 UINT8 board_check_connected_xy(INT8 x, INT8 y, UINT8 piece, UINT8 * p_this_connect, UINT8 flags) {
 
-    UINT8 adj_piece, adj_connect;
+    static UINT8 adj_piece, adj_connect;
 
     // Get requested board piece
     // (Fails if edge board piece and returns false to break out of calling loop)
@@ -539,11 +571,12 @@ UINT8 board_check_connected_xy(INT8 x, INT8 y, UINT8 piece, UINT8 * p_this_conne
 
 void board_handle_pet_completed(UINT8 flags) {
 
-    UINT8 c = 0;
-    UINT8 crunchups_to_send;
+    static UINT8 c;
+    static UINT8 crunchups_to_send;
 
     stats_maxpet_copy_iflongest();
 
+    c = 0;
     while (c < board_tile_clear_count) {
 
         // Play special sound (per tile) when more than N tiles have been cleared for a pet
@@ -610,12 +643,22 @@ void board_handle_pet_completed(UINT8 flags) {
 //
 void board_check_completed_pet_xy(INT8 start_x, INT8 start_y, UINT8 piece, UINT8 connect, UINT8 flags) {
 
-    UINT8 piece_count, headtail_count;
-     INT8 check_x = 0, check_y = 0;  // Inits here and this_connect are just to quiet the compiler re long pet hinting add() location non-initialization
-    UINT8 this_connect = 0;
-    UINT8 last_connect;
-    UINT8 source_cur_dir;
+    // static UINT8 piece_count, headtail_count;
+    // static INT8  check_x, check_y;
+    // static UINT8 this_connect;
+    // static UINT8 last_connect;
+    // static UINT8 source_cur_dir;
 
+     UINT8 piece_count, headtail_count;
+     INT8  check_x, check_y;
+     UINT8 this_connect;
+     UINT8 last_connect;
+     UINT8 source_cur_dir;
+
+         check_x = 0;       // OK to not initialize
+         check_y = 0;       // OK to not initialize
+         last_connect = 0;  // OK to not initialize
+        this_connect = 0;
 
         // Reset tile clear cache (add one entry, current piece)
         board_tile_clear_cache_x[0] = start_x; // = start_x + (start_y * BRD_WIDTH);

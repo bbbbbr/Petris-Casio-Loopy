@@ -18,6 +18,7 @@
 #include "input.h"
 #include "audio_common.h"
 #include "sound.h"
+#include "gfx.h"
 #include "gfx_print.h"
 
 #include "options.h"
@@ -40,8 +41,9 @@ UINT8 player_piece;
 UINT8 player_attrib;
 
 
-
-
+// See: PLAYER_PIECE_UPDATE_SHOWAT_XY()
+// See: PLAYER_PIECE_UPDATE_HIDE()
+/*
 void player_piece_update_xy(UINT8 do_show) {
 
     if (do_show) {
@@ -55,14 +57,14 @@ void player_piece_update_xy(UINT8 do_show) {
         move_sprite(SPR_PLAYER, 0,0);
     }
 }
-
+*/
 
 
 UINT8 player_piece_try_reload(void) {
 
     // If the board already has a tile in the default load location then
     // that means game over. Signal failure
-    if (!board_check_open_xy(BRD_NEWPIECE_X, BRD_NEWPIECE_Y)) {
+    if (!BOARD_CHECK_OPEN_XY(BRD_NEWPIECE_X, BRD_NEWPIECE_Y)) {
 
         return (FALSE);
     }
@@ -86,7 +88,7 @@ UINT8 player_piece_try_reload(void) {
     game_piece_next_show(TRUE);
 
     player_piece_update_gfx();
-    player_piece_update_xy(PLAYER_PIECE_SHOW);
+    PLAYER_PIECE_UPDATE_SHOWAT_XY();
 
 
     if (option_game_visual_hints == OPTION_VISUAL_HINTS_ON) {
@@ -110,7 +112,7 @@ UINT8 player_piece_try_reload(void) {
 
 UINT8 player_piece_connect_get(UINT8 piece, UINT8 rotate) {
 
-    UINT8 connect;
+    static UINT8 connect;
 
     // Get connection info for piece and downshift to use as a LUT index
     connect = GP_CONNECT_LUT[ (piece & GP_SEG_MASK) >> GP_SEG_UPSHIFT ];
@@ -126,7 +128,7 @@ UINT8 player_piece_connect_get(UINT8 piece, UINT8 rotate) {
 
 void player_piece_set_on_board(void) {
 
-    UINT8 player_connect;
+    static UINT8 player_connect;
 
     player_connect = player_piece_connect_get(player_piece, player_rotate);
 
@@ -135,7 +137,7 @@ void player_piece_set_on_board(void) {
     // This happens here so it doesn't obscure board animations
     // under the sprite based piece
     if (!(player_piece & GP_SPECIAL_MASK)) {
-        player_piece_update_xy(PLAYER_PIECE_HIDE);
+        PLAYER_PIECE_UPDATE_HIDE();
 
         // Now set the piece onto the board
         board_set_tile_xy(player_x, player_y,
@@ -177,14 +179,17 @@ void player_piece_rotate_apply(UINT8 dir) {
 //
 UINT8 player_piece_move(INT8 dir_x, INT8 dir_y) {
 
-    INT8 new_x = (player_x + dir_x);
-    INT8 new_y = (player_y + dir_y);
+    static INT8 new_x;
+    static INT8 new_y;
+
+    new_x = (player_x + dir_x);
+    new_y = (player_y + dir_y);
 
     if ((new_x >= BRD_MIN_X) &&
         (new_x <= BRD_MAX_X) &&
         (new_y >= BRD_MIN_Y) &&
         (new_y <= BRD_MAX_Y) &&
-         board_check_open_xy(new_x, new_y)) {
+         BOARD_CHECK_OPEN_XY(new_x, new_y)) {
 
         // OPTIONAL: play movement tick sound
         // PLAY_SOUND_PIECE_MOVE;
@@ -192,7 +197,7 @@ UINT8 player_piece_move(INT8 dir_x, INT8 dir_y) {
         player_x = new_x;
         player_y = new_y;
 
-        player_piece_update_xy(PLAYER_PIECE_SHOW);
+        PLAYER_PIECE_UPDATE_SHOWAT_XY();
 
         if (option_game_visual_hints == OPTION_VISUAL_HINTS_ON) {
 

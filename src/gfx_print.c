@@ -44,7 +44,9 @@ void print_num_u16(UINT8 x, UINT8 y, UINT16 num, UINT8 print_digits) {
 
     // Initialize index at END of array +1,
     // so that the first pass sets it to the first array position
-    UINT8 index = PRINT_MAX_DIGITS;
+    static UINT8 index;
+
+    index = PRINT_MAX_DIGITS;
 
     if (print_digits > PRINT_MAX_DIGITS)
         print_digits = PRINT_MAX_DIGITS;
@@ -91,8 +93,8 @@ void print_num_u16(UINT8 x, UINT8 y, UINT16 num, UINT8 print_digits) {
 // Removed some code, removed some characters
 void print_text(const char* txt, unsigned char delay_time){
 
-    unsigned char c;
-    unsigned char start_x;
+    static unsigned char c;
+    static unsigned char start_x;
 
     start_x = print_x; // Save start X for newline return
 

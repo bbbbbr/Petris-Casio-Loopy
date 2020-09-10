@@ -90,7 +90,7 @@ void gameplay_drop_speed_update(void) {
 
 void gameplay_ended_cleanup(void) {
 
-    player_piece_update_xy(PLAYER_PIECE_HIDE);
+    PLAYER_PIECE_UPDATE_HIDE();
     game_piece_next_show(FALSE);
     player_hinting_drop_reset();
     player_hinting_special_reset();
@@ -241,7 +241,7 @@ void gameplay_prepare_piece(void) {
     // Hide the player piece initially
     // it will get displayed after PLAYER_NEWPIECE is handled
     // which then calls player_piece_try_reload()
-    player_piece_update_xy(PLAYER_PIECE_HIDE);
+    PLAYER_PIECE_UPDATE_HIDE();
 
     // Preview sprite will be displayed before player piece
     // does, so player can preview as board loads. Turn it on now.
@@ -302,7 +302,7 @@ void gameplay_handle_pause(void) {
 
     // These hides are basically a dupe of gameplay_exit_cleanup()
     game_piece_next_show(FALSE);
-    player_piece_update_xy(PLAYER_PIECE_HIDE);
+    PLAYER_PIECE_UPDATE_HIDE();
     player_hinting_special_show(FALSE);
     player_hinting_drop_show(FALSE);
 
@@ -331,7 +331,7 @@ void gameplay_handle_pause(void) {
 
     // Redraw the board and player piece
     board_redraw_all();
-    player_piece_update_xy(PLAYER_PIECE_SHOW);
+    PLAYER_PIECE_UPDATE_SHOWAT_XY();
     game_piece_next_show(TRUE);
 
     if (option_game_music != OPTION_MUSIC_OFF) {
@@ -435,10 +435,11 @@ void gameplay_handle_input(void) {
     // Toggle Pet Length overlay
     if (KEY_TICKED(J_SELECT)) {
 
+board_showconnect();
         // PET_LENGTH_PREVIEW_ENABLED_FOR_ALL_MODES
         //
         // if (option_game_type == OPTION_GAME_TYPE_LONG_PET) {
-            hinting_petlength_turn_on();
+//            hinting_petlength_turn_on();
         // }
     }
 

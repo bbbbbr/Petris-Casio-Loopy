@@ -66,8 +66,8 @@ void stats_maxpet_reset(void) {
 // Copy current completed pet if it's the new longest pet
 void stats_maxpet_copy_iflongest(void) {
 
-    UINT8 c;
-    UINT8 tile_index;
+    static UINT8 c;
+    static UINT8 tile_index;
 
 
     if (board_tile_clear_count > maxpet_tilecount) {

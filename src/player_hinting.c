@@ -33,12 +33,6 @@
 
 #include "gameplay.h"
 
-extern  INT8 player_x;
-extern  INT8 player_y;
-extern  INT8 player_rotate; // Uses wraparound, so allow negative nums
-extern UINT8 player_piece;
-extern UINT8 player_attrib;
-
 
 // Hint sprites are arranged clockwise around player piece
 // --> Left, Top, Right, Bottom
@@ -75,7 +69,7 @@ void player_hinting_flicker_update() {
 // Hide special piece hinting sprites by moving them off-screen
 void player_hinting_special_reset(void) {
 
-        INT8 c;
+        static INT8 c;
 
         for (c=SPR_SPECIAL_HINT_1; c <= SPR_SPECIAL_HINT_4; c++) {
             move_sprite(c, 0, 0);
@@ -114,7 +108,7 @@ void player_hinting_special_show(UINT8 do_show) {
 // NOTE: expects to only be called if (player_piece & GP_SPECIAL_MASK)
 void player_hinting_special_move(void) {
 
-        INT8 spr_x, spr_y;
+        static INT8 spr_x, spr_y;
 
         spr_x = (player_x * BRD_UNIT_SIZE) + BRD_PIECE_X_OFFSET;
         spr_y = (player_y * BRD_UNIT_SIZE) + BRD_PIECE_Y_OFFSET;
@@ -184,7 +178,7 @@ void player_hinting_drop_show(UINT8 do_show) {
 
 void player_hinting_drop_update(void) {
 
-    INT8 drop_hint_y;
+    static INT8 drop_hint_y;
 
     drop_hint_y = board_find_lowest_open_in_column(player_x, player_y);
 
@@ -211,11 +205,17 @@ void player_hinting_drop_update(void) {
 // sprite_idx + 2  = Cross / Penultiamte length marer
 //
 
+// OPTIONAL: These vars could be shared by all functions below
+//    static UINT8 c/slot;
+//    static UINT8 sprite_idx;
+
 
 void hinting_petlength_reset(void) {
 
-    UINT8 c;
-    UINT8 sprite_idx;
+    static UINT8 c;
+    static UINT8 sprite_idx;
+
+    sprite_idx = SPR_LONG_PET_HINT_NUM_START;
 
     // Make sure all the sprites are hidden
     // and the location cache is cleared
@@ -274,8 +274,10 @@ void hinting_petlength_turn_on(void) {
 // for pets that almost meeting required Long Pet length
 void hinting_petlength_add(INT8 board_x, INT8 board_y, UINT8 length, UINT8 piece) {
 
-    UINT8 slot;
-    UINT8 sprite_idx;
+    static UINT8 slot;
+    static UINT8 sprite_idx;
+
+    sprite_idx = SPR_LONG_PET_HINT_NUM_START;
 
     // Try to use the last freed slot,
     // otherwise continue with rotating through slots sequentially
@@ -355,8 +357,10 @@ void hinting_petlength_add(INT8 board_x, INT8 board_y, UINT8 length, UINT8 piece
 //       * Warning: Non-connected liverange found and extended to connected component of the CFG:iTemp0. Please contact sdcc authors with source code to reproduce.
 void hinting_petlength_showhide(void) {
 
-    UINT8 c;
-    UINT8 sprite_idx = SPR_LONG_PET_HINT_NUM_START;
+    static UINT8 c;
+    static UINT8 sprite_idx;
+
+    sprite_idx = SPR_LONG_PET_HINT_NUM_START;
 
     for (c = 0; c < SPR_LONG_PET_HINT_POOL_SIZE; c++) {
 
@@ -400,8 +404,10 @@ void hinting_petlength_showhide(void) {
 
 void hinting_petlength_remove(INT8 board_x, INT8 board_y) {
 
-    UINT8 c;
-    UINT8 sprite_idx = SPR_LONG_PET_HINT_NUM_START;
+    static UINT8 c;
+    static UINT8 sprite_idx;
+
+    sprite_idx = SPR_LONG_PET_HINT_NUM_START;
 
 // Only search within max number of added hints
     for (c = 0; c < SPR_LONG_PET_HINT_POOL_SIZE; c++) {
@@ -444,8 +450,10 @@ void hinting_petlength_remove(INT8 board_x, INT8 board_y) {
 // eventually be called afterward to refresh sprite locations
 void hinting_petlength_scrollup(void) {
 
-    UINT8 c;
-    UINT8 sprite_idx = SPR_LONG_PET_HINT_NUM_START;
+    static UINT8 c;
+    static UINT8 sprite_idx;
+
+    sprite_idx = SPR_LONG_PET_HINT_NUM_START;
 
     // Only search within max number of added hints
     for (c = 0; c < SPR_LONG_PET_HINT_POOL_SIZE; c++) {
@@ -469,8 +477,10 @@ void hinting_petlength_scrollup(void) {
 // Refresh the pet length overlay sprite locations
 void hinting_petlength_refreshxy(void) {
 
-    UINT8 c;
-    UINT8 sprite_idx = SPR_LONG_PET_HINT_NUM_START;
+    static UINT8 c;
+    static UINT8 sprite_idx;
+
+    sprite_idx = SPR_LONG_PET_HINT_NUM_START;
 
     // Only search within max number of added hints
     for (c = 0; c < SPR_LONG_PET_HINT_POOL_SIZE; c++) {

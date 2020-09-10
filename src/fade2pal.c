@@ -23,6 +23,11 @@ extern UWORD ModPalBg[];
 
 UINT8 fade_sky_pal_idx;
 
+// OPTIONAL: some of these vars could be shared
+//    static UINT16 * p_src_pal;
+//    static UINT8  pal_inc;
+//    static UINT8  c;
+
 
 // Use Bresenham's algorithm to Linear Interpolate (lerp)
 // between old->new R/G/B over N Frames
@@ -88,10 +93,14 @@ void fade2pal_start_next(void) {
 void fade2pal_prep_fade(UINT8 * p_dest_pal_gbr) {
 
     // Extract RGB from current palettes
-    UINT16 * p_src_pal = &ModPalBg[FADE2PAL_PALNUM_START * COLORS_PER_PAL];
-    UINT16 t_color = *p_src_pal;
-    UINT8  pal_inc = PAL_INC_RESET;
-    UINT8  c;
+    static UINT16 * p_src_pal;
+    static UINT16 t_color;
+    static UINT8  pal_inc;
+    static UINT8  c;
+
+    p_src_pal = &ModPalBg[FADE2PAL_PALNUM_START * COLORS_PER_PAL];
+    t_color = *p_src_pal;
+    pal_inc = PAL_INC_RESET;
 
     for (c = 0; c < FADE2PAL_ARY_SIZE; c++) {
 
@@ -153,9 +162,13 @@ void fade2pal_calc_entry(UINT8 color_from, UINT8 color_to, UINT8 c) {
 // This can also be called from a vlank/etc ISR
 void fade2pal_update_entry(void) {
 
-    UINT8  pal_inc = PAL_INC_RESET;
-    UINT8  c;
-    UINT16 * p_src_pal = &ModPalBg[FADE2PAL_PALNUM_START * COLORS_PER_PAL];
+    static UINT8  pal_inc;
+    static UINT8  c;
+    static UINT16 * p_src_pal;
+
+    pal_inc = PAL_INC_RESET;
+    p_src_pal = &ModPalBg[FADE2PAL_PALNUM_START * COLORS_PER_PAL];
+
     *p_src_pal = 0; // Clear the first palette entry
 
     // Update all the separated B,G,R color components

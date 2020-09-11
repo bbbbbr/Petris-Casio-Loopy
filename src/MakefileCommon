@@ -43,7 +43,7 @@ SRC2SYM = ./src2sym.pl
 
 LCC = $(GBDK_HOME)/bin/lcc
 # SDCC = sdcc
-SDCC = ~/gbdev/Compilers/sdcc_11848/bin/sdcc --fsigned-char
+SDCC = ~/gbdev/Compilers/sdcc_11848/bin/sdcc
 SDASGB = sdasgb
 ifeq ($(MOD2GBT),)
 	MOD2GBT = $(ZGB_PATH_UNIX)/../env/mod2gbt
@@ -76,7 +76,7 @@ ifneq ($(strip $(N_BANKS)),)
 endif
 
 # These are SDCC flags (LCC is not used)
-CFLAGS = $(CDEBUG) -mgbz80 --no-std-crt0  --use-stdout -Dnonbanked=  -I $(GBDK_HOME)/include -I $(GBDK_HOME)/include/asm $(BUILD_DEFS) -I$(PATH_PREFIX)include
+CFLAGS = $(CDEBUG)  --legacy-banking --fsigned-char -mgbz80 --no-std-crt0  --use-stdout -Dnonbanked=  -I $(GBDK_HOME)/include -I $(GBDK_HOME)/include/asm $(BUILD_DEFS) -I$(PATH_PREFIX)include
 # --print-search-dirs --verbose
 # --fsigned-char : doesn't seem to be supported currently
 
@@ -163,6 +163,7 @@ $(OBJDIR_RES)/%.o: $(PATH_PREFIX)res/%.c
 	fi
 	@$(SDCC) $(CFLAGS) $(filter --constseg CODE_%, $(subst .b,--constseg CODE_,$(suffix $(<:%.c=%)))) -c -o $@ $<
 
+
 $(OBJDIR_RES)/%.mod.o: $(PATH_PREFIX)res/music/%.mod
 	@echo compiling music: $<
 # [song] [label] [bank]
@@ -171,20 +172,24 @@ $(OBJDIR_RES)/%.mod.o: $(PATH_PREFIX)res/music/%.mod
 # $(MOD2GBT) $< $(basename $(basename $(notdir $<)))_mod $(subst .b,,$(suffix $(<:%.mod=%))) > /dev/null
 # produces: output.c and associated output.bin
 	$(MOD2GBT_SINGLEARRAY) $< $(basename $(basename $(notdir $<)))_mod $(subst .b,,$(suffix $(<:%.mod=%))) > /dev/null
-
 # compress unified song array (requires modified mod2gbt to produce a single array)
 	$(APULTRA) output.bin output_comp.bin
 	$(BIN2C) output_comp.bin output_comp.c $(basename $(basename $(notdir $<)))_mod
-
 # merge compressed array back to main c file
 	cat output_comp.c >> output.c
-
 # cleanup intermediary files
 	rm output.bin output_comp.bin output_comp.c
 	@mv output.c $(OBJDIR)/music_tmp.c
 	@$(SDCC) $(CFLAGS) -c -o $@ $(OBJDIR)/music_tmp.c
 
+
+
 $(BINDIR)/$(PROJECT_NAME).$(EXTENSION): $(OBJDIR) $(OBJDIR_RES) $(BINDIR) $(OBJS) $(COMMON_OBJS)
+#	@echo Fixing SDCC output 24 -> 16 bit
+#	sed -i "s/T \([0-9a-fA-F]\{2\}\) \([0-9a-fA-F]\{2\}\) 00/T \1 \2/g" $(OBJDIR)/*.o
+#	sed -i "s/ef00\([0-9a-fA-F]\{2\}\)\([0-9a-fA-F]\{2\}\)/ef\1\2/g" $(OBJDIR)/*.o
+#	sed -i "s/T \([0-9a-fA-F]\{2\}\) \([0-9a-fA-F]\{2\}\) 00/T \1 \2/g" $(OBJDIR_RES)/*.o
+#	sed -i "s/ef00\([0-9a-fA-F]\{2\}\)\([0-9a-fA-F]\{2\}\)/ef\1\2/g" $(OBJDIR_RES)/*.o
 	@echo Linking
 	$(LCC) $(LFLAGS) -v -o $(OBJDIR)/$(PROJECT_NAME).$(EXTENSION) $(OBJS) $(COMMON_OBJS)
 	cp $(OBJDIR)/$(PROJECT_NAME).$(EXTENSION) $(BINDIR)/$(PROJECT_NAME).$(EXTENSION)

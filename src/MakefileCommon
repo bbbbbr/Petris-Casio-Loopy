@@ -79,7 +79,7 @@ endif
 
 # --code-size 64000
 # These are SDCC flags (LCC is not used)
-CFLAGS = $(CDEBUG) -mgbz80 --no-std-crt0  --use-stdout --legacy-banking --fsigned-char -Dnonbanked=  -I $(GBDK_HOME)/include -I $(GBDK_HOME)/include/asm $(BUILD_DEFS) -I$(PATH_PREFIX)include
+CFLAGS = $(CDEBUG) -mgbz80 --no-std-crt0 --data-loc 0xc0a0  --use-stdout --legacy-banking --fsigned-char -Dnonbanked=  -I $(GBDK_HOME)/include -I $(GBDK_HOME)/include/asm $(BUILD_DEFS) -I$(PATH_PREFIX)include
 # --print-search-dirs --verbose
 # --fsigned-char : doesn't seem to be supported currently
 

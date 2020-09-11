@@ -42,7 +42,8 @@ BINDIR = $(PATH_PREFIX)bin
 SRC2SYM = ./src2sym.pl
 
 LCC = $(GBDK_HOME)/bin/lcc
-SDCC = sdcc
+# SDCC = sdcc
+SDCC = ~/gbdev/Compilers/sdcc_11848/bin/sdcc --fsigned-char
 SDASGB = sdasgb
 ifeq ($(MOD2GBT),)
 	MOD2GBT = $(ZGB_PATH_UNIX)/../env/mod2gbt

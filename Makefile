@@ -1,6 +1,7 @@
 PROJECT_NAME = Petris
 
-export GBDK_HOME="/opt/gbdk"
+# export GBDK_HOME="/opt/gbdk"
+export GBDK_HOME="../gbdk-2020/gbdk-lib"
 export BGB="../tools/bgbw64-1.5.8/bgb64.exe"
 # export MOD2GBT="../tools/mod2gbt/mod2gbt.exe"
 export MOD2GBT="tools/mod2gbt_withunbanked"

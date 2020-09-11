@@ -41,10 +41,12 @@ BINDIR = $(PATH_PREFIX)bin
 
 SRC2SYM = ./src2sym.pl
 
-# LCC = $(GBDK_HOME)/bin/lcc
-SDLDGB = ~/gbdev/Compilers/sdcc_11848/bin/sdldgb
-MAKEBIN = ~/gbdev/Compilers/sdcc_11848/bin/makebin
+LCC = $(GBDK_HOME)/bin/lcc
+# SDLDGB = ~/gbdev/Compilers/sdcc_11848/bin/sdldgb
+# MAKEBIN = ~/gbdev/Compilers/sdcc_11848/bin/makebin
 # SDCC = sdcc
+LINKGBZ80 = $(GBDK_HOME)/../link/bin/link-gbz80
+MAKEBIN = ~/gbdev/Compilers/sdcc_11848/bin/makebin
 SDCC = ~/gbdev/Compilers/sdcc_11848/bin/sdcc
 SDASGB = sdasgb
 ifeq ($(MOD2GBT),)
@@ -74,7 +76,7 @@ ifneq ($(strip $(N_BANKS)),)
 	# -Wl-yt1 -> MBC1
 	# LFLAGS_NBANKS = -Wl-yt1 -Wl-yo$(N_BANKS)
 	# lcc defaults to no MBC ("0") in absence of -Wl-yt[MBC#]
-#	LFLAGS_NBANKS = -Wl-yt0 -Wl-yo$(N_BANKS)
+	LFLAGS_NBANKS = -yt0 -yo$(N_BANKS)
 endif
 
 # --code-size 64000
@@ -88,7 +90,7 @@ ifneq (,$(findstring Color,$(BUILD_TYPE)))
 	# Enable CGB mode
 	# 0x80 for games which support both CGB and monochrome
     # 0xC0 for games which work on CGBs only
-	# LFLAGS_NBANKS += -Wl-yp0x143=0xC0
+	LFLAGS_NBANKS += -yp0x143=0xC0
 	# BINFLAGS=-yt 0x1a -yo 4 -ya 4
 	# BINFLAGS=-yC -yo 1 -ya 0 -yn $(PROJECT_NAME) -s 32768
 	BINFLAGS=-yC -yt 0 -yo 2
@@ -108,16 +110,16 @@ ifdef SKIPINTRO
 endif
 
 
-# LFLAGS = $(LFLAGS_NBANKS)
+LFLAGS = $(LFLAGS_NBANKS)
 
 # enable linker map file output
-# LFLAGS += -Wl-m
+LFLAGS += -m
 # enable listing output
-# LFLAGS += -Wa-l
+# LFLAGS += -l
 
 ifdef CDEBUG
 # enable linker no$gmb symbol output on debug builds
-# LFLAGS += -Wl-j
+LFLAGS += -j
 endif
 
 
@@ -128,14 +130,13 @@ endif
 # LFLAGS += -n -j -i -k
 
 # LFLAGS += -k %GBDKLIB%\gbz80\ -l gbz80.lib -k %GBDKLIB%\gb\ -l gb.lib
-LNAMES = -g .OAM=0xC000 -g .STACK=0xE000 -g .refresh_OAM=0xFF80 -g .init=0x0000
-LNAMES += -b _DATA=0xc0a0 -b _CODE=0x0200 -b _GSINIT=0x76C1 -b _HOME=0x725D
-LFLAGS += $(LNAMES)
-LFLAGS += -k $(GBDK_HOME)/lib/small/asxxxx/gbz80/
-LFLAGS += -l $(GBDK_HOME)/lib/small/asxxxx/gbz80/gbz80.lib
-LFLAGS += -k $(GBDK_HOME)/lib/small/asxxxx/gb/
-LFLAGS += -l $(GBDK_HOME)/lib/small/asxxxx/gb/gb.lib
-
+# LNAMES = -g .OAM=0xC000 -g .STACK=0xE000 -g .refresh_OAM=0xFF80 -g .init=0x0000
+# LNAMES += -b _DATA=0xc0a0 -b _CODE=0x0200 -b _GSINIT=0x76C1 -b _HOME=0x725D
+# LFLAGS += $(LNAMES)
+LFLAGS += -k $(GBDK_HOME)/build/small/asxxxx/gbz80/
+LFLAGS += -l $(GBDK_HOME)/build/small/asxxxx/gbz80/gbz80.lib
+LFLAGS += -k $(GBDK_HOME)/build/small/asxxxx/gb/
+LFLAGS += -l $(GBDK_HOME)/build/small/asxxxx/gb/gb.lib
 
 current_dir = $(shell pwd)
 
@@ -208,10 +209,9 @@ $(OBJDIR_RES)/%.mod.o: $(PATH_PREFIX)res/music/%.mod
 
 $(BINDIR)/$(PROJECT_NAME).$(EXTENSION): $(OBJDIR) $(OBJDIR_RES) $(BINDIR) $(OBJS) $(COMMON_OBJS)
 	@echo Linking
-# $(LCC) $(LFLAGS) -v -o $(OBJDIR)/$(PROJECT_NAME).$(EXTENSION) $(OBJS) $(COMMON_OBJS)
-#	$(SDLDGB) $(LFLAGS) -p $(OBJDIR)/$(PROJECT_NAME).$(EXTENSION) $(OBJS) $(COMMON_OBJS)
-	$(SDLDGB) $(LFLAGS) -y -m -w -p -i $(OBJDIR)/$(PROJECT_NAME).ihx $(OBJS) $(COMMON_OBJS)
-	$(MAKEBIN) -Z $(BINFLAGS) $(OBJDIR)/$(PROJECT_NAME).ihx $(OBJDIR)/$(PROJECT_NAME).$(EXTENSION)
+#	$(LCC) $(LFLAGS) -v -o $(OBJDIR)/$(PROJECT_NAME).$(EXTENSION) $(OBJS) $(COMMON_OBJS)
+#	$(LINKGBZ80) -- -z $(OBJDIR)/$(PROJECT_NAME).$(EXTENSION) $(LFLAGS) $(OBJS) $(COMMON_OBJS)
+	$(LINKGBZ80) -- $(LFLAGS) -z $(OBJDIR)/$(PROJECT_NAME).$(EXTENSION) $(OBJS) $(COMMON_OBJS)
 	cp $(OBJDIR)/$(PROJECT_NAME).$(EXTENSION) $(BINDIR)/$(PROJECT_NAME).$(EXTENSION)
 
 # if this is a debug build, reprocess the mainsymbol output to include C source

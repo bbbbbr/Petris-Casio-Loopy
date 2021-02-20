@@ -171,6 +171,32 @@ void main(void){
     #endif
 
 
+#ifdef REMOTE_SENDER
+
+    link_reset();
+    link_enable();
+
+
+    while(1) {
+        // Wait for vertical blank (end of the frame)
+        // before starting to process the next frame
+        // (skip if already happened)
+        if(!vbl_count)
+            wait_vbl_done();
+        vbl_count = 0;
+
+        // Handle joypad input
+        UPDATE_KEYS();
+        if (keys != previous_keys)
+            LINK_SEND(keys);
+    }
+#else
+    #ifdef REMOTE_RECEIVER
+
+        link_reset();
+        link_enable();
+    #endif
+
     while(1) {
         // Wait for vertical blank (end of the frame)
         // before starting to process the next frame
@@ -273,4 +299,5 @@ void main(void){
         }
 
     }
+#endif
 }

@@ -198,6 +198,15 @@ void link_isr(void) __critical __interrupt {
 
     } // === Handle RX New Data ===
     else {
+#ifdef REMOTE_SENDER
+        // Do nothing
+#else
+    #ifdef REMOTE_RECEIVER
+
+        // Update keypad info
+        remote_joypad = link_data;
+
+    #else
 
         if (link_status == LINK_STATUS_DETECTING) {
 
@@ -303,6 +312,8 @@ void link_isr(void) __critical __interrupt {
                     break;
             }
         } // else if (link_status == LINK_STATUS_CONNECTED)
+    #endif
+#endif
     } // else for: if (SC_REG & LINK_CLOCK_INT)
 
 

@@ -312,7 +312,9 @@ void options_screen_init(void) {
     // Update music status to match option menu setting
     MusicUpdateStatus();
 
+#ifndef REMOTE_RECEIVER
     link_start_detect();
+#endif
 }
 
 
@@ -344,7 +346,7 @@ void options_screen_try_gamestart(void) {
 
 void options_screen_handle(void) {
 
-
+#ifndef REMOTE_RECEIVER
     if (link_status == LINK_STATUS_CONNECTED) {
         // If link status is connected that
         //  means it's time to start the game
@@ -354,7 +356,7 @@ void options_screen_handle(void) {
         // Update 2-Player serial link status periodically
         link_check_connect();
     }
-
+#endif
     // Cursor Updates
     if (KEY_TICKED(J_UP)) {
 
@@ -405,7 +407,12 @@ void options_screen_handle(void) {
     // Start game
     else if (KEY_TICKED(J_START)) {
 
+#ifdef REMOTE_RECEIVER
+        options_screen_exit_cleanup();
+        game_state = GAME_READY_TO_START;
+#else
         options_screen_try_gamestart();
+#endif
     }
 
     // NOTE: For now, A/B are also used to increase/decrease option settings

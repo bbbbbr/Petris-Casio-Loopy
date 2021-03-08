@@ -11,6 +11,17 @@
 # Adds a small utility for swapping to another state set with rand.s/h
 
 
+# == REMOTE CONTROL BUILD == 
+#
+# FROM input.h :
+# // #define REMOTE_SENDER
+# // #define REMOTE_RECEIVER
+#
+# Can be enabled with  <--------------------------------------------
+#  CFLAGS += -DREMOTE_SENDER
+# OR
+#  CFLAGS += -DREMOTE_RECEIVER
+
 
 #--- Default build will be release. Can be overidden passing BUILD_TYPE = debug as a parameter
 # ex: Release, Debug, ReleaseColor, DebugColor

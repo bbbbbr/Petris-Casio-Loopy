@@ -42,37 +42,6 @@ UINT8 board_tile_clear_cache_x[BRD_SIZE];
 UINT8 board_tile_clear_cache_y[BRD_SIZE];
 UINT8 board_tile_clear_count = 0;
 
-#define TILE_ID_BOARD_BLANK_ROW_BG TILE_ID_BOARD_BLANK_BG
-
-// 10 tiles wide for clearing the game board one row at a time
-// This MUST match game board width
-const UINT8 board_blank_row[BRD_WIDTH] = {
-                 TILE_ID_BOARD_BLANK_ROW_BG,
-                 TILE_ID_BOARD_BLANK_ROW_BG,
-                 TILE_ID_BOARD_BLANK_ROW_BG,
-                 TILE_ID_BOARD_BLANK_ROW_BG,
-                 TILE_ID_BOARD_BLANK_ROW_BG,
-                 TILE_ID_BOARD_BLANK_ROW_BG,
-                 TILE_ID_BOARD_BLANK_ROW_BG,
-                 TILE_ID_BOARD_BLANK_ROW_BG,
-                 TILE_ID_BOARD_BLANK_ROW_BG,
-                 TILE_ID_BOARD_BLANK_ROW_BG};
-
-const UINT8 board_uparrow_row[BRD_WIDTH] = {
-                TILE_ID_BOARD_UP,
-                TILE_ID_BOARD_UP,
-                TILE_ID_BOARD_UP,
-                TILE_ID_BOARD_UP,
-                TILE_ID_BOARD_UP,
-                TILE_ID_BOARD_UP,
-                TILE_ID_BOARD_UP,
-                TILE_ID_BOARD_UP,
-                TILE_ID_BOARD_UP,
-                TILE_ID_BOARD_UP};
-
-const UINT8 board_blank_row_pal[BRD_WIDTH] = {
-                0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04};
-
 const UINT8 gp_dissolve_anim[] = {GP_DISSOLVE_1 + TILES_PET_START,
                                   GP_DISSOLVE_2 + TILES_PET_START,
                                   GP_DISSOLVE_3 + TILES_PET_START};
@@ -91,15 +60,12 @@ void board_hide_all(UINT16 delay_amount) {
 
     INT8 y;
 
-    // for (y = BRD_ST_Y; y < (BRD_ST_Y + BRD_HEIGHT); y++) {
     // Clear board from bottom up
     for (y = BRD_END_Y; y >= BRD_ST_Y; y--) {
 
         // Update BG Attribs from Game Board
         VBK_REG = 1;
-        set_bkg_tiles(BRD_ST_X, y,
-                      sizeof(board_blank_row_pal), 1,
-                      &board_blank_row_pal[0]);
+        fill_bkg_rect(BRD_ST_X, y, BRD_WIDTH, 1, BG_PAL_4);
 
         // Update BG Tilemap from Game Board
         VBK_REG = 0;
@@ -108,17 +74,13 @@ void board_hide_all(UINT16 delay_amount) {
         // briefly draw and show a row of up-arrows before
         // the blank row gets drawn in the same place
         if (delay_amount) {
-            set_bkg_tiles(BRD_ST_X, y,
-                          sizeof(board_uparrow_row), 1,
-                          &board_uparrow_row[0]);
+            fill_bkg_rect(BRD_ST_X, y, BRD_WIDTH, 1, TILE_ID_BOARD_UP);
 
             delay(delay_amount);
         }
 
         // Draw the blank row
-        set_bkg_tiles(BRD_ST_X, y,
-                      sizeof(board_blank_row), 1,
-                      &board_blank_row[0]);
+        fill_bkg_rect(BRD_ST_X, y, BRD_WIDTH, 1, TILE_ID_BOARD_BLANK_BG);
     }
 }
 

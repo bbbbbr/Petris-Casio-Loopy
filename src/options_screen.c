@@ -11,7 +11,7 @@
 
 // options_screen.c
 
-#include <gb/gb.h>
+#include <gbdk/platform.h>
 #include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 
@@ -222,30 +222,18 @@ void options_screen_setting_draw(INT8 option_id) {
 //Optional: could be faster to use a BG Map here or render into an array and then apply
 void options_screen_draw(void) {
 
-    UINT8 x,y;
+    uint8_t y;
 
-    for (y = SCREEN_MIN_Y; y <= SCREEN_MAX_Y; y++) {
-        for (x = SCREEN_MIN_X; x <= SCREEN_MAX_X; x++) {
+    // Set BG tile attribute map to single palette color
+    VBK_REG = 1;
+    fill_bkg_rect(0, 0, DEVICE_SCREEN_WIDTH, DEVICE_SCREEN_HEIGHT, BG_PAL_4);
 
-            // Clear BG tile attribute map
-            VBK_REG = 1;
-            set_bkg_tiles(x, y, 1, 1, &options_screen_attrib_pal);
-
-            // Select BG tile map
-            VBK_REG = 0;
-
-            // Draw a gradient at the top of the screen
-            if (y <= 2) {
-                set_bkg_tiles(x, y, 1, 1, &options_screen_tiles[y]);
-
-            } else {
-                // Regular sky tiles for the rest
-                set_bkg_tiles(x, y, 1, 1, &options_screen_tiles[3]);
-            }
-
-        } // end x loop
-    } // end x loop
-
+    // Select BG tile map with simple gradient at top
+    VBK_REG = 0;
+    fill_bkg_rect(0, 0, DEVICE_SCREEN_WIDTH, 1, TILES_INTRO_START + 0);
+    fill_bkg_rect(0, 1, DEVICE_SCREEN_WIDTH, 1, TILES_INTRO_START + 1);
+    fill_bkg_rect(0, 2, DEVICE_SCREEN_WIDTH, 1, TILES_INTRO_START + 2);
+    fill_bkg_rect(0, 3, DEVICE_SCREEN_WIDTH, DEVICE_SCREEN_HEIGHT - 3, TILES_INTRO_START + 3);
 
     PRINT(2,3, "--- OPTIONS ---", 0);
 }

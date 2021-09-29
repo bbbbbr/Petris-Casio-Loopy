@@ -53,11 +53,6 @@
 
 const UINT8 spr_cursor_offset[] = {0,1,2,3,3,2,1,0};
 
-const UINT8 options_screen_attrib_pal = BG_PAL_4;
-const UINT8 options_screen_tiles[] = {TILES_INTRO_START + 0,
-                                      TILES_INTRO_START + 1,
-                                      TILES_INTRO_START + 2,
-                                      TILES_INTRO_START + 3};
 
 // TODO: fold this into the options menu array?
 enum option_menu_entries {

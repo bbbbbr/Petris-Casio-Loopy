@@ -10,15 +10,16 @@
 # Uses patched gbt_player with gbt_pause logic de-inverted and mute fixed
 # Adds a small utility for swapping to another state set with rand.s/h
 
-# PLATFORM=GAMEBOY
-PLATFORM=POCKET
+PLATFORM=GAMEBOY
+# PLATFORM=POCKET
+# PLATFORM=GAMEGEAR
 
 
 #--- Default build will be release. Can be overidden passing BUILD_TYPE = debug as a parameter
 # ex: Release, Debug, ReleaseColor, DebugColor
 
-BUILD_TYPE = ReleaseColor
-# BUILD_TYPE = DebugColor
+# BUILD_TYPE = ReleaseColor
+BUILD_TYPE = DebugColor
 CGB = yes
 
 # For: make flashcart target
@@ -94,6 +95,12 @@ ifeq ($(PLATFORM),POCKET)
 	PLATFLAG = -mgbz80:ap
 	EXTENSION = pocket
 endif
+# Platform overrides
+ifeq ($(PLATFORM),GAMEGEAR)
+	PLATFLAG = -mz80:gg
+	EXTENSION = gg
+endif
+
 
 # Only turn on intro temporal faded clouds if this isn't a web build
 # make BUILDWEB=ON run

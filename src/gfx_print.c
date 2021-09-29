@@ -11,7 +11,7 @@
 
 // gfx_print.c
 
-#include <gb/gb.h>
+#include <gbdk/platform.h>
 #include <gb/cgb.h> // Include cgb functions
 #include "asm/types.h"
 #include <ctype.h>

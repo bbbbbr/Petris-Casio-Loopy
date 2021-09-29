@@ -11,7 +11,7 @@
 
 // game_piece.c
 
-#include <gb/gb.h>
+#include <gbdk/platform.h>
 #include <gb/cgb.h> // Include cgb functions
 #include <rand.h>
 

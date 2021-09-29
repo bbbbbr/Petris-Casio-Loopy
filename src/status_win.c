@@ -10,7 +10,7 @@
 // See: http://creativecommons.org/licenses/by-nc-sa/4.0/
 
 
-#include <gb/gb.h>
+#include <gbdk/platform.h>
 #include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 

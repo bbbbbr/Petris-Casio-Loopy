@@ -1,6 +1,6 @@
 
 
-#include <gb/gb.h>
+#include <gbdk/platform.h>
 #include <gb/cgb.h>
 
 #include "gfx_board_fadepals.h"

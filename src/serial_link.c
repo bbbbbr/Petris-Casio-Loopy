@@ -86,7 +86,7 @@
 // is present, a value of $FF will be received in the transfer.
 
 
-#include <gb/gb.h>
+#include <gbdk/platform.h>
 #include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 

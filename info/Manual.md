@@ -14,8 +14,8 @@ If you run the "Cartridge" build of Petris in an emulator then you may want to t
 * **Left/Right**: Move piece Left/Right
 
 - **Start**: Pause
-- **Select**: Show length of recent pets
-- **Select + Up**: Change High Contrast mode setting
+- **Select**: Show length of recent pets (**UP** on the Game Gear)
+- **Select + Up**: Change High Contrast mode setting (**B + Up** on the Game Gear)
 
 
 #### Game types

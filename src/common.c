@@ -12,5 +12,7 @@
 #include <gbdk/platform.h>
 
 #include "common.h"
+#include "platform_compat.h"
 
 UINT8 game_state = GAME_INTRO_INIT;
+

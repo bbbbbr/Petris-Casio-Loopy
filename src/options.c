@@ -13,10 +13,10 @@
 
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 
 #include "common.h"
+#include "platform_compat.h"
 
 #include "options.h"
 #include "options_screen.h"

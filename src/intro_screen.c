@@ -12,9 +12,10 @@
 // intro_screen.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 
+#include "common.h"
+#include "platform_compat.h"
 #include "gfx.h"
 #include "gfx_print.h"
 #include "sound.h"
@@ -78,7 +79,7 @@ const UINT8 SPR_CLOUDS_Y[]     = {30,30,30,30,30,
                                   42,42,42,
                                   37,37,37,37,
                                   71,71,71,71,71,
-                                  67,67,67,67,67};
+                                  63,63,63,63,63};
 
 const UINT8 SPR_CLOUDS_VEL[]   = {3,3,3,3,3,
                                   1,1,1,
@@ -101,7 +102,8 @@ void intro_clouds_init(void) {
     // Sprites
     SPRITES_8x8;
     fade_set_pal(BG_PAL_4, 1, clouds_sprite_palette, FADE_PAL_SPRITES);
-    set_sprite_data(SPR_CLOUDS_START, SPR_TILE_COUNT_CLOUDS, intro_screen_tiles + TILE_OFFSET_CLOUDS);
+    // set_sprite_data(SPR_CLOUDS_START, SPR_TILE_COUNT_CLOUDS, intro_screen_tiles + TILE_OFFSET_CLOUDS);
+    set_sprite_data_pal_compat(SPR_CLOUDS_START, SPR_TILE_COUNT_CLOUDS, intro_screen_tiles + TILE_OFFSET_CLOUDS, intro_screen_tiles_pals + TILE_ID_CLOUDS_START);
 
     // Loop through all cloud sprites
     for(c = SPR_CLOUD_START; c <= SPR_CLOUD_MAX; c++) {
@@ -110,7 +112,7 @@ void intro_clouds_init(void) {
         set_sprite_prop(c, SPR_PAL_CLOUDS);
 
         // Ensure sprite is off-screen to start
-        move_sprite(c, 0,0);
+        move_sprite(c, 0, 0);
     }
 
 }
@@ -140,7 +142,7 @@ void intro_clouds_update(void) {
             if (spr_clouds_x[c] == 0)
                 spr_clouds_x[c]+= 168;
 
-            move_sprite(c, spr_clouds_x[c], SPR_CLOUDS_Y[c]);
+            move_sprite(c, spr_clouds_x[c] + SPRITE_OFS_X, SPR_CLOUDS_Y[c] + SPRITE_OFS_Y);
         }
     }
 }
@@ -153,31 +155,43 @@ void intro_clouds_cleanup(void) {
     // Loop through all cloud sprites
     for(c = 0; c <= SPR_CLOUD_MAX; c++) {
 
-        move_sprite(c, 0,0);
+        move_sprite(c, 0, 0);
     }
 
 }
+
 
 
 void intro_screen_init(void) {
 
     intro_clouds_init();
 
-    set_bkg_data(TILES_INTRO_START,     TILE_COUNT_INTRO,     intro_screen_tiles);
+    // set_bkg_data(TILES_INTRO_START,     TILE_COUNT_INTRO,     intro_screen_tiles);
+    set_bkg_data_pal_compat(TILES_INTRO_START, TILE_COUNT_INTRO, intro_screen_tiles, intro_screen_tiles_pals);
+
     set_bkg_data(TILES_FONT_START,      TILE_COUNT_FONT,      font_tiles);
     set_bkg_data(TILES_PET_START,       TILE_COUNT_PETTOTAL,  pet_tiles);
 
     // Load BG tile attribute map
-    VBK_REG = 1;
-    set_bkg_tiles(0, 0, 20, 18, intro_screen_mapPLN1);
+    // VBK_REG = 1;
+    // set_bkg_tiles(0, 0, 20, 18, intro_screen_mapPLN1);
+    set_bkg_tiles_attr_compat(0, 0, 20, 18, intro_screen_mapPLN1);
 
     // Load BG tile map
     VBK_REG = 0;
     set_bkg_tiles(0, 0, 20, 18, intro_screen_mapPLN0);
 
     // set_bkg_palette(BG_PAL_4, 4, intro_screen_palette); // UBYTE first_palette, UBYTE nb_palettes, UWORD *rgb_data
-    fade_set_pal(BG_PAL_0, 3, intro_screen_logo_palette, FADE_PAL_BKG);
-    fade_set_pal(BG_PAL_4, 3, intro_screen_palette, FADE_PAL_BKG);
+    #ifdef NINTENDO
+        fade_set_pal(BG_PAL_0, 3, intro_screen_logo_palette, FADE_PAL_BKG);
+        fade_set_pal(BG_PAL_4, 3, intro_screen_palette, FADE_PAL_BKG);
+    #elif defined(GAMEGEAR)
+        fade_set_pal(BG_PAL_0, 4, intro_screen_logo_palette, FADE_PAL_SPRITES);
+        // Upper pal of 16 colors on GG is mapped for sprites in fade code
+        // But BG can still use those
+        fade_set_pal(BG_PAL_0, 4, intro_screen_palette, FADE_PAL_BKG);
+        // fade_set_pal(BG_PAL_0, 3, intro_screen_palette, FADE_PAL_SPRITES);
+    #endif
 
     SHOW_BKG;
     SHOW_SPRITES;

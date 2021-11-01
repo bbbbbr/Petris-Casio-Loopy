@@ -12,9 +12,9 @@
 // player_piece.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 
 #include "common.h"
+#include "platform_compat.h"
 #include "input.h"
 #include "audio_common.h"
 #include "sound.h"
@@ -75,6 +75,11 @@ UINT8 player_piece_try_reload(void) {
 
     player_attrib = 0; // zero out here, updated below in player_piece_update_gfx()
     player_rotate = GP_ROTATE_DEFAULT;
+
+    // Override attributes and force second palette
+    #if defined(GAMEGEAR)
+        player_attrib = GG_TILE_ATTR_MSB_PAL_1;
+    #endif // GAMEGEAR
 
     // Get a new piece
     player_piece = game_piece_next_get();
@@ -160,16 +165,19 @@ void player_piece_rotate_apply(UINT8 dir) {
     // Rotate sound
     PLAY_SOUND_PIECE_ROTATE;
 
-    if (dir == PLAYER_ROT_LEFT)
-        player_rotate--;
-    else if (dir == PLAYER_ROT_RIGHT)
-        player_rotate++;
+    if (dir == PLAYER_ROT_LEFT) {
+        if (player_rotate == GP_ROTATE_MIN) player_rotate = GP_ROTATE_MAX;
+        else player_rotate--;
+    } else if (dir == PLAYER_ROT_RIGHT) {
+        if (player_rotate == GP_ROTATE_MAX) player_rotate = GP_ROTATE_MIN;
+        else player_rotate++;
+    }
 
-    // Handle wraparound
-    if (player_rotate < GP_ROTATE_MIN)
-        player_rotate = GP_ROTATE_MAX;
-    else if (player_rotate > GP_ROTATE_MAX)
-        player_rotate = GP_ROTATE_MIN;
+    // // Handle wraparound
+    // if (player_rotate < GP_ROTATE_MIN) // <-------- GAMEGEARTODO - PROBLEM?
+    //     player_rotate = GP_ROTATE_MAX;
+    // else if (player_rotate > GP_ROTATE_MAX)
+    //     player_rotate = GP_ROTATE_MIN;
 
     player_piece_update_gfx();
 }
@@ -221,24 +229,18 @@ void player_piece_update_gfx() {
         player_attrib = GP_PAL_SPECIAL;
 
     } else {
-        // Update player rotation (clear rotate bits and then set)
-        // This means *generated* rotation will always be overwritten with default rotation
-        player_piece = ((player_piece & ~GP_ROT_MASK)
-                        | GP_ROT_LUT_TILE[player_rotate]);
+        // Update player rotation to default (0 degrees) (clear rotate bits and then set)
+        player_piece = (player_piece & ~GP_ROT_MASK) | (player_rotate << GP_ROT_UPSHIFT);
 
         // Set palette based on pet type (CGB Pal bits are 0x07)
         // And mirror bits based on rotation setting from LUT
-        player_attrib = ((player_piece & GP_PET_MASK) >> GP_PET_UPSHIFT) // Palette
-                         | GP_ROT_LUT_ATTR[player_rotate];               // Rotation sprite mirror bits
-
-
-        // L Turn pieces require mirror X and Y
-        // when rotation is 180 and 270
-        // Note: This could be simplified by using a full set of pieces instead of 1/2 set and mirroring them
-        if (((player_piece & GP_SEG_MASK) ==  GP_SEG_TURN_BITS) &&
-             (player_rotate & GP_ROTATE_SEG_TURN_180_AND_270_USE_MIRROR_BITS))
-            player_attrib |= (GP_MIRROR_X | GP_MIRROR_Y);
+        player_attrib = (player_piece & GP_PET_MASK) >> GP_PET_UPSHIFT; // Palette based on pet
     }
+
+    // Override attributes and force second palette
+    #if defined(GAMEGEAR)
+        player_attrib = GG_TILE_ATTR_MSB_PAL_1;
+    #endif // GAMEGEAR
 
     // set_sprite_tile(SPR_PLAYER, (player_piece & GP_PET_BITS_MASK));
     set_sprite_tile(SPR_PLAYER, player_piece);

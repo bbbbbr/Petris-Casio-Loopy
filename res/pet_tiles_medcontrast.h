@@ -10,7 +10,7 @@
   Compression          : None.
   Counter              : None.
   Tile size            : 8 x 8
-  Tiles                : 0 to 10
+  Tiles                : 0 to 20
 
   Palette colors       : Included.
   SGB Palette          : None.
@@ -22,13 +22,15 @@
 
 */
 
+#ifndef __pet_tiles_medcontrast_h_INCLUDE
+#define __pet_tiles_medcontrast_h_INCLUDE
 
 /* Bank of tiles. */
 #define pet_tiles_mdcontrastBank 0
 
 /* Super Gameboy palette 0 */
 #define pet_tiles_mdcontrastSGBPal0c0 0
-#define pet_tiles_mdcontrastSGBPal0c1 0
+#define pet_tiles_mdcontrastSGBPal0c1 64
 #define pet_tiles_mdcontrastSGBPal0c2 0
 #define pet_tiles_mdcontrastSGBPal0c3 0
 
@@ -98,6 +100,8 @@
 #define pet_tiles_mdcontrastCGBPal7c2 20083
 #define pet_tiles_mdcontrastCGBPal7c3 0
 /* Start of tile array. */
-extern unsigned char pet_tiles_mdcontrast[];
+extern const unsigned char pet_tiles_mdcontrast[];
+
+#endif
 
 /* End of PET_TILES_MEDCONTRAST.H */

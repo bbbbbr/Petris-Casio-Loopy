@@ -12,20 +12,25 @@
 // options_screen.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 
 
 #include "gfx.h"
 #include "gfx_print.h"
 #include "input.h"
-#include "serial_link.h"
+
+#ifdef NINTENDO
+    #include "serial_link.h"
+#endif
 
 #include "sound.h"
-#include "gbt_player.h"
 #include "audio_common.h"
+#ifdef NINTENDO
+    #include "gbt_player.h"
+#endif
 
 #include "common.h"
+#include "platform_compat.h"
 #include "fade.h"
 
 #include "game_piece_data.h"
@@ -40,7 +45,7 @@
 
 
 #define SPR_OPTIONS_CURSOR 0 // Cursor is sprite "0"
-#define PET_DOG_HEAD       ((GP_PET_DOG << GP_PET_UPSHIFT) | (GP_SEG_HEAD << GP_SEG_UPSHIFT))
+#define PET_DOG_HEAD       ((GP_PET_DOG << GP_PET_UPSHIFT) | (GP_SEG_HEAD << GP_SEG_UPSHIFT) | (GP_ROTATE_180 << GP_ROT_UPSHIFT))
 
 #define OPTION_MENU_X_START 2
 #define OPTION_CURSOR_X     12 // (tiles from Left Edge: 1.5 x 8 pixels per tile)
@@ -101,23 +106,31 @@ typedef struct opt_item {
     INT8           opt_entries; // Size of option values array
     const char * * p_text_arr;  // Array of option text strings / values
     INT8 *         p_curval;    // Pointer to (extern) option variable
+    UINT8          id;          // Option ID # (ex: OPTION_MENU_MUSIC)
 
 } option_item;
 
 // See above for meaning of each element
 const option_item options[] = {
-        {  5,"TYPE :",         (INT8)ARRAY_LEN(options_type),          &options_type[0],          &option_game_type},
-        {  7,"LEVEL:",         (INT8)ARRAY_LEN(options_difficulty),    &options_difficulty[0],    &option_game_difficulty},
-        {  9,"MUSIC:",         (INT8)ARRAY_LEN(options_music),         &options_music[0],         &option_game_music},
-        { 12,"   START GAME ", (INT8)ARRAY_LEN(options_visual_hints),  NULL, NULL},
-        { 14,"2 PLAYER VS.: ", (INT8)ARRAY_LEN(options_link2p),        &options_link2p[0],        &option_game_link2p},
-        { 15,"HI CONTRAST : ", (INT8)ARRAY_LEN(options_high_contrast), &options_high_contrast[0], &option_game_high_contrast},
-        { 16,"VISUAL HINTS: ", (INT8)ARRAY_LEN(options_visual_hints),  &options_visual_hints[0],  &option_game_visual_hints},
+        {  5,"TYPE :",         (INT8)ARRAY_LEN(options_type),          &options_type[0],          &option_game_type,          OPTION_MENU_TYPE},
+        {  7,"LEVEL:",         (INT8)ARRAY_LEN(options_difficulty),    &options_difficulty[0],    &option_game_difficulty,    OPTION_MENU_LEVEL},
+        #ifdef NINTENDO
+        {  9,"MUSIC:",         (INT8)ARRAY_LEN(options_music),         &options_music[0],         &option_game_music,         OPTION_MENU_MUSIC},
+        { 12,"   START GAME ", (INT8)ARRAY_LEN(options_visual_hints),  NULL,                      NULL,                       OPTION_MENU_STARTGAME},
+        { 14,"2 PLAYER VS.: ", (INT8)ARRAY_LEN(options_link2p),        &options_link2p[0],        &option_game_link2p,        OPTION_MENU_LINK2P},
+        { 15,"HI CONTRAST : ", (INT8)ARRAY_LEN(options_high_contrast), &options_high_contrast[0], &option_game_high_contrast, OPTION_MENU_HIGH_CONTRAST},
+        { 16,"VISUAL HINTS: ", (INT8)ARRAY_LEN(options_visual_hints),  &options_visual_hints[0],  &option_game_visual_hints,  OPTION_MENU_VISUAL_HINTS},
+        #elif defined(GAMEGEAR)
+        { 10,"   START GAME ", (INT8)ARRAY_LEN(options_visual_hints),  NULL,                      NULL,                       OPTION_MENU_STARTGAME},
+        { 13,"HI CONTRAST : ", (INT8)ARRAY_LEN(options_high_contrast), &options_high_contrast[0], &option_game_high_contrast, OPTION_MENU_HIGH_CONTRAST},
+        { 15,"VISUAL HINTS: ", (INT8)ARRAY_LEN(options_visual_hints),  &options_visual_hints[0],  &option_game_visual_hints,  OPTION_MENU_VISUAL_HINTS},        
+        #endif
     };
 
+#define OPTION_MENU_ARRAY_MIN 0
+#define OPTION_MENU_ARRAY_MAX (ARRAY_LEN(options) - 1)
 
-
-INT8 options_menu_index = OPTION_MENU_STARTGAME;
+INT8 options_menu_index = OPTION_MENU_ARRAY_MIN;
 
 
 
@@ -132,11 +145,11 @@ void options_screen_cursor_update(INT8 dir) {
     options_menu_index += dir;
 
     // Handle wraparound
-    if (options_menu_index < OPTION_MENU_MIN) {
-        options_menu_index = OPTION_MENU_MAX;
+    if (options_menu_index < OPTION_MENU_ARRAY_MIN) {
+        options_menu_index = OPTION_MENU_ARRAY_MAX;
     }
-    else if (options_menu_index > OPTION_MENU_MAX) {
-        options_menu_index = OPTION_MENU_MIN;
+    else if (options_menu_index > OPTION_MENU_ARRAY_MAX) {
+        options_menu_index = OPTION_MENU_ARRAY_MIN;
     }
 
     // Note: Moving the menu cursor sprite is turned off here.
@@ -148,19 +161,21 @@ void options_screen_cursor_update(INT8 dir) {
 // Update the currently selected option's value
 void options_screen_setting_update(INT8 dir) {
 
+    int8_t * p_optval = options[options_menu_index].p_curval;
 
     // "Start Game" menu entry has no settings
-    if (options_menu_index != OPTION_MENU_STARTGAME) {
+    if (options[options_menu_index].id != OPTION_MENU_STARTGAME) {
 
         // Update setting
-        *(options[options_menu_index].p_curval) += dir;
+        *p_optval += dir;
+        p_optval = options[options_menu_index].p_curval;
 
         // Handle Min/Max
-        if (*(options[options_menu_index].p_curval) < OPTION_SETTING_MIN) {
-                *(options[options_menu_index].p_curval) = OPTION_SETTING_MIN;
+        if (*p_optval < OPTION_SETTING_MIN) {
+                *p_optval = OPTION_SETTING_MIN;
         }
-        else if (*(options[options_menu_index].p_curval) >= options[options_menu_index].opt_entries) {
-                *(options[options_menu_index].p_curval) = options[options_menu_index].opt_entries - 1; // zero indexed array
+        else if (*p_optval >= options[options_menu_index].opt_entries) {
+                *p_optval = options[options_menu_index].opt_entries - 1; // zero indexed array
         } else {
             // Only play a sound if the cursor moved and wasn't clamped to min/max
             if (dir != 0) {
@@ -169,11 +184,10 @@ void options_screen_setting_update(INT8 dir) {
 
         }
 
-
         options_screen_setting_draw(options_menu_index);
 
         // Turn music on/off to preview music option
-        if (options_menu_index == OPTION_MENU_MUSIC) {
+        if (options[options_menu_index].id == OPTION_MENU_MUSIC) {
 
             // Can test using the var linked from the options menu
             // here, since it should be updated by now
@@ -189,7 +203,7 @@ void options_screen_setting_update(INT8 dir) {
 void options_screen_setting_draw(INT8 option_id) {
 
     // Display option Titles using a lighter font (except Start)
-    if (option_id != OPTION_MENU_STARTGAME) {
+    if (options[option_id].id != OPTION_MENU_STARTGAME) {
         PRINT_PAL(OPTION_TITLE_PRINT_PAL);
     }
 
@@ -206,7 +220,7 @@ void options_screen_setting_draw(INT8 option_id) {
     // print cursor at the end of the previous print
     //
     // Don't print current settings for "Start Game" menu entry
-    if (option_id != OPTION_MENU_STARTGAME) {
+    if (options[option_id].id != OPTION_MENU_STARTGAME) {
         print_text(options[option_id].p_text_arr[ *(options[option_id].p_curval) ], 0);
     }
 
@@ -242,10 +256,12 @@ void options_screen_sprites_init(void) {
 //    set_sprite_palette(BG_PAL_0, 4, board_pets_palette); // UBYTE first_palette, UBYTE nb_palettes, UWORD *rgb_data, pal_type
     // No need for high-contrast here (user has not yet selected high-contrast)
     fade_set_pal(BG_PAL_0, 4, board_pets_palette, FADE_PAL_SPRITES);
-    set_sprite_data(0, TILE_COUNT_PETTOTAL, pet_tiles);
+    set_sprite_data_pal_compat(0, TILE_COUNT_PETTOTAL, pet_tiles, pet_tiles_pals);
 
     set_sprite_tile(SPR_OPTIONS_CURSOR, PET_DOG_HEAD);
-    set_sprite_prop(SPR_OPTIONS_CURSOR, BG_FLIP_X | BG_PAL_0);
+    #ifdef NINTENDO
+        set_sprite_prop(SPR_OPTIONS_CURSOR, BG_FLIP_X | BG_PAL_0);
+    #endif
 
     SHOW_SPRITES;
 }
@@ -269,9 +285,12 @@ void options_screen_init(void) {
     //       See: status_win_popup_init()
 
     // Add a lighter font for options
-    fade_set_pal(OPTION_TITLE_PRINT_PAL, 1, option_title_palette, FADE_PAL_BKG);
+    #ifdef NINTENDO
+        fade_set_pal(OPTION_TITLE_PRINT_PAL, 1, option_title_palette, FADE_PAL_BKG);
+    #endif
     // Upper 4 palettes from intro screen
-    fade_set_pal(BG_PAL_4, 4, intro_screen_palette, FADE_PAL_BKG);
+    // fade_set_pal(BG_PAL_4, 4, intro_screen_palette, FADE_PAL_BKG);
+    fade_set_pal(BG_PAL_0, 4, intro_screen_palette, FADE_PAL_BKG);
 
     set_bkg_data(TILES_INTRO_START,     TILE_COUNT_INTRO,     intro_screen_tiles);
     set_bkg_data(TILES_FONT_START,      TILE_COUNT_FONT,      font_tiles);
@@ -279,11 +298,16 @@ void options_screen_init(void) {
 
     SHOW_BKG;
 
-    options_menu_index = OPTION_MENU_STARTGAME;
+    // Find "Start Game" menu entry and auto-select it
+    for (c = OPTION_MENU_ARRAY_MIN; c <= OPTION_MENU_ARRAY_MAX; c++) {
+        if (options[c].id == OPTION_MENU_STARTGAME)
+            options_menu_index = c;
+    }
+
 
     options_screen_draw();
 
-    for (c = OPTION_MENU_MIN; c <= OPTION_MENU_MAX; c++) {
+    for (c = OPTION_MENU_ARRAY_MIN; c <= OPTION_MENU_ARRAY_MAX; c++) {
         options_screen_setting_draw(c);
     }
 
@@ -295,32 +319,39 @@ void options_screen_init(void) {
     // Update music status to match option menu setting
     MusicUpdateStatus();
 
-    link_start_detect();
+    #ifdef NINTENDO
+        link_start_detect();
+    #endif
 }
 
 
 
 void options_screen_try_gamestart(void) {
 
-    // If serial link 2-Player versus is being initiated
-    // then try to link up with the other player
-    // before starting the game.
-    if (option_game_link2p == OPTION_LINK2P_ON) {
+    #ifdef NINTENDO
+        // If serial link 2-Player versus is being initiated
+        // then try to link up with the other player
+        // before starting the game.
+        if (option_game_link2p == OPTION_LINK2P_ON) {
 
-        // If this succeeds, the game start will be picked up
-        // during the main loop in options_screen_handle()
-        // for both Initiator and Follower.
-        // The timing of game start is less exact for players
-        // than the previous implementation.
-        link_try_gamestart();
-    } else {
-        // If link not requested, then turn off link
-        // connection to avoid unwanted initiation in game play
-        link_disable();
+            // If this succeeds, the game start will be picked up
+            // during the main loop in options_screen_handle()
+            // for both Initiator and Follower.
+            // The timing of game start is less exact for players
+            // than the previous implementation.
+            link_try_gamestart();
+        } else {
+            // If link not requested, then turn off link
+            // connection to avoid unwanted initiation in game play
+            link_disable();
 
+            options_screen_exit_cleanup();
+            game_state = GAME_READY_TO_START;
+        }
+    #elif defined(GAMEGEAR)
         options_screen_exit_cleanup();
         game_state = GAME_READY_TO_START;
-    }
+    #endif // GAMEGEAR
 }
 
 
@@ -328,15 +359,17 @@ void options_screen_try_gamestart(void) {
 void options_screen_handle(void) {
 
 
-    if (link_status == LINK_STATUS_CONNECTED) {
-        // If link status is connected that
-        //  means it's time to start the game
-        options_screen_exit_cleanup();
-        game_state = GAME_READY_TO_START;
-    } else {
-        // Update 2-Player serial link status periodically
-        link_check_connect();
-    }
+    #ifdef NINTENDO
+        if (link_status == LINK_STATUS_CONNECTED) {
+            // If link status is connected that
+            //  means it's time to start the game
+            options_screen_exit_cleanup();
+            game_state = GAME_READY_TO_START;
+        } else {
+            // Update 2-Player serial link status periodically
+            link_check_connect();
+        }
+    #endif
 
     // Cursor Updates
     if (KEY_TICKED(J_UP)) {
@@ -363,7 +396,7 @@ void options_screen_handle(void) {
     // easier to accidentally toggle them without intention
     else if (KEY_TICKED(J_A)) {
 
-        if (options_menu_index == OPTION_MENU_STARTGAME) {
+        if (options[options_menu_index].id == OPTION_MENU_STARTGAME) {
 
             options_screen_try_gamestart();
         } else {
@@ -374,7 +407,7 @@ void options_screen_handle(void) {
     }
     else if (KEY_TICKED(J_B)) {
 
-        if (options_menu_index == OPTION_MENU_STARTGAME) {
+        if (options[options_menu_index].id == OPTION_MENU_STARTGAME) {
 
             options_screen_try_gamestart();
         } else {
@@ -405,8 +438,9 @@ void options_screen_handle(void) {
     if ((sys_time & CURSOR_UPDATE_MASK) == CURSOR_UPDATE_MASK) {
         // Animate the cursor with a mild bounce
         move_sprite(SPR_OPTIONS_CURSOR,
-                    OPTION_CURSOR_X,
+                    OPTION_CURSOR_X + SPRITE_OFS_X,
                     ((options[options_menu_index].menu_y + 2) * 8)  // + 2 is sprite vs bg offset
-                    + spr_cursor_offset[(sys_time & CURSOR_LUT_MASK) >> CURSOR_BITSHIFT] - 2);
+                    + spr_cursor_offset[(sys_time & CURSOR_LUT_MASK) >> CURSOR_BITSHIFT] - 2
+                    + SPRITE_OFS_Y);
     }
 }

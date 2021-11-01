@@ -12,7 +12,6 @@
 // board_gfx.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 
 #include "game_piece.h"
 #include "game_piece_data.h"
@@ -21,6 +20,7 @@
 #include "gameover_message.h"
 
 #include "common.h"
+#include "platform_compat.h"
 
 #include "fade.h"
 #include "gfx.h"
@@ -29,7 +29,10 @@
 #include "player_gfx.h"
 #include "player_info.h"
 #include "options.h"
-#include "serial_link.h"
+
+#ifdef NINTENDO
+    #include "serial_link.h"
+#endif
 
 #include "../res/intro_screen_tiles.h"
 #include "../res/game_board_map.h"
@@ -40,22 +43,24 @@
 #define CGB_TILE_SIZE 16
 #define ANIM_TAIL_BATCH_SIZE 2
 #define TAIL_ANIM_COUNT_LOOP_SIZE 60 // One run of updates every N frames
-#define TAIL_ANIM_ALTERNATE_BITS  0x04
-#define TAIL_ANIM_FRAMES_PER_SET  4
+#define TAIL_ANIM_ALTERNATE_BITS  0x08
+#define TAIL_ANIM_FRAMES_PER_SET  8
 
 const UINT8 NEXT_PIECE_BG_TILE = TILE_ID_BOARD_NEXT_PIECE_PREVIEW_BG;
 const UINT8 NEXT_PIECE_BG_PAL  = BG_PAL_BOARD_NEXT_PIECE_PREVIEW;
 
-const UINT8 pet_tail_anim_tilenum[] = {TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 0), // Set 1
-                                       TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 1),
-                                       TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 2),
-                                       TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 3),
+// TODO: just convert to advancing a pointer by a specified amount
 
-                                       TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 0), // Set 2
-                                       TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 1),
-                                       TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 2),
-                                       TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 3)
-                                   };
+const UINT8 pet_tail_anim_dest_tilenum[] = {TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 0), // Set 1
+                                            TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 1),
+                                            TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 2),
+                                            TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 3),
+
+                                            TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 4), // Set 1
+                                            TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 5),
+                                            TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 6),
+                                            TILES_PET_START + (ANIM_TAIL_BATCH_SIZE * 7),
+                                            };
 
 const UINT16 pet_tail_anim_srcoffset[] = {
                                       // Regular Tail
@@ -64,11 +69,45 @@ const UINT16 pet_tail_anim_srcoffset[] = {
                                       (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 2)) * CGB_TILE_SIZE,
                                       (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 3)) * CGB_TILE_SIZE,
 
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 4)) * CGB_TILE_SIZE,
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 5)) * CGB_TILE_SIZE,
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 6)) * CGB_TILE_SIZE,
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 7)) * CGB_TILE_SIZE,
+
                                       // Wag Tail
                                       (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 0)) * CGB_TILE_SIZE,
                                       (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 1)) * CGB_TILE_SIZE,
                                       (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 2)) * CGB_TILE_SIZE,
-                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 3)) * CGB_TILE_SIZE
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 3)) * CGB_TILE_SIZE,
+
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 4)) * CGB_TILE_SIZE,
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 5)) * CGB_TILE_SIZE,
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 6)) * CGB_TILE_SIZE,
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 7)) * CGB_TILE_SIZE
+                                    };
+
+const uint8_t pet_tail_anim_pal_srcoffset[] = {
+                                      // Regular Tail
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 0)),
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 1)),
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 2)),
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 3)),
+
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 4)),
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 5)),
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 6)),
+                                      (TILE_OFFSET_PET_TAIL_REG + (ANIM_TAIL_BATCH_SIZE * 7)),
+
+                                      // Wag Tail
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 0)),
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 1)),
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 2)),
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 3)),
+
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 4)),
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 5)),
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 6)),
+                                      (TILE_OFFSET_PET_TAIL_WAG + (ANIM_TAIL_BATCH_SIZE * 7))
                                     };
 UINT8 tail_anim_count = 0;
 UINT8 tail_anim_alternate = 0;
@@ -100,32 +139,35 @@ void board_gfx_change_pettiles(void) {
     board_gfx_init_pettiles();
 }
 
+
+
 void board_gfx_init_pettiles(void) {
 
     // == Background data ==
 
-    // Uses High Contrast tile set if option is enabled
-    if (game_state == GAME_READY_TO_START)
-        fade_set_pal(BG_PAL_0, 4, p_pet_palette,   FADE_PAL_BKG);
-    else
-        set_bkg_palette(BG_PAL_0, 4, p_pet_palette);
-
-   // Load special sprite data after pet data
-    set_bkg_data(TILES_PET_START,       TILE_COUNT_PETTOTAL,  p_pet_tiles);
-    set_bkg_data(TILES_SPECIAL_START,   TILE_COUNT_SPECIALTOTAL, special_tiles);
+    #ifdef NINTENDO
+        // Uses High Contrast tile set if option is enabled
+        // On GG this palette is handled via the sprite palette
+        if (game_state == GAME_READY_TO_START)
+            fade_set_pal(BG_PAL_0, 4, p_pet_palette,   FADE_PAL_BKG);
+        else
+            set_bkg_palette(BG_PAL_0, 4, p_pet_palette);
+    #endif
+    // Note: The per-sprite tile palette assignment always uses the default,
+    // regardless of whether high-contrast tiles are used.
+    set_bkg_data_pal_compat(TILES_PET_START, TILE_COUNT_PETTOTAL, p_pet_tiles, pet_tiles_pals);
+    set_bkg_data_pal_compat(TILES_SPECIAL_START, TILE_COUNT_SPECIALTOTAL, special_tiles, special_tiles_pals);
 
     // == Sprite data ==
 
    // Uses High Contrast tile set if option is enabled
     if (game_state == GAME_READY_TO_START)
-        fade_set_pal(BG_PAL_0, 5, p_pet_palette, FADE_PAL_SPRITES); // Includes Specials palette as #5
+        fade_set_pal(BG_PAL_0, 4, p_pet_palette, FADE_PAL_SPRITES); // Includes Specials palette as #5
     else
         set_sprite_palette(BG_PAL_0, 5, p_pet_palette); // Includes Specials palette as #5
 
-
-    // Load special sprite data after pet data
-    set_sprite_data(SPRITE_TILE_PET_START, TILE_COUNT_PETTOTAL, p_pet_tiles);
-    set_sprite_data(SPRITE_TILE_SPECIAL_START, TILE_COUNT_SPECIALTOTAL, special_tiles);
+    set_sprite_data_pal_compat(SPRITE_TILE_PET_START, TILE_COUNT_PETTOTAL, p_pet_tiles, pet_tiles_pals);
+    set_sprite_data_pal_compat(SPRITE_TILE_SPECIAL_START, TILE_COUNT_SPECIALTOTAL, special_tiles, special_tiles_pals);
 }
 
 
@@ -134,11 +176,18 @@ void board_gfx_init_sprites(void) {
     SPRITES_8x8;
 
     // Just load first of 4 pals from this -> for printing font to sprites
-    fade_set_pal(BG_PAL_5, 1, intro_screen_palette, FADE_PAL_SPRITES);
+// TODO: GAMEGEAR: FIXME
+    // fade_set_pal(BG_PAL_5, 1, intro_screen_palette, FADE_PAL_SPRITES);
 
     // Load overlay font data after sprite data
     set_sprite_data(SPRITE_TILE_FONT_DIGITS_START, TILE_COUNT_FONT_NUMS,
-                    font_tiles + (TILES_FONT_CHARS_LEN * CGB_TILE_SIZE));
+                    font_tiles + (TILES_FONT_CHARS_LEN * CGB_TILE_SIZE)); // Offset past alpha chars to start of digits
+    #if defined(GAMEGEAR)
+        // Load Extra set of font tiles into sprite RAM for gameover message (could be optimized to have BG share with these)
+        set_2bpp_palette(gg_pal_select[2]); // Use Pet Palette Number 3
+        set_sprite_data(SPRITE_TILE_FONT_CHARS_START, TILES_FONT_CHARS_LEN,
+                        font_tiles);
+    #endif
 }
 
 
@@ -147,21 +196,25 @@ void board_gfx_init_background(void) {
         //set_bkg_palette(BG_PAL_0, 4, board_pets_palette); // UBYTE first_palette, UBYTE nb_palettes, UWORD *rgb_data
         //set_bkg_palette(BG_PAL_4, 4, intro_screen_palette); // UBYTE first_palette, UBYTE nb_palettes, UWORD *rgb_data
 
-        fade_set_pal(BG_PAL_4, 4, intro_screen_palette, FADE_PAL_BKG);
+        fade_set_pal(BG_PAL_0, 4, intro_screen_palette, FADE_PAL_BKG);
 
-        set_bkg_data(TILES_INTRO_START,     TILE_COUNT_INTRO,     intro_screen_tiles);
+        // set_bkg_data(TILES_INTRO_START,     TILE_COUNT_INTRO,     intro_screen_tiles);
+        set_bkg_data_pal_compat(TILES_INTRO_START, TILE_COUNT_INTRO, intro_screen_tiles, intro_screen_tiles_pals);
 
         set_bkg_data(TILES_FONT_START,      TILE_COUNT_FONT,      font_tiles);
 
         // Load BG tile attribute map
-        VBK_REG = 1;
-        set_bkg_tiles(0, 0, 20, 18, game_board_mapPLN1);
+        // VBK_REG = 1;
+        // set_bkg_tiles(0, 0, 20, 18, game_board_mapPLN1);
+        set_bkg_tiles_attr_compat(0, 0, 20, 18, game_board_mapPLN1);
 
         // Load BG tile map
         VBK_REG = 0;
         set_bkg_tiles(0, 0, 20, 18, game_board_mapPLN0);
 
 
+        // set_bkg_tiles_attr_compat(GAME_PIECE_NEXT_PREVIEW_BG_X, GAME_PIECE_NEXT_PREVIEW_BG_Y,
+        //                           1, 1, &NEXT_PIECE_BG_PAL);
         // Set the preview tile area to a white background
         VBK_REG = 1; // Select BG tile attribute map
         set_bkg_tiles(GAME_PIECE_NEXT_PREVIEW_BG_X, GAME_PIECE_NEXT_PREVIEW_BG_Y,
@@ -191,8 +244,10 @@ void board_gfx_init_background(void) {
             PRINT(DISPLAY_NUMPETS_X,  DISPLAY_NUMPETS_Y - 1,  "PETS", 0);
         }
 
-        // Show a status icon if link connected
-        link_update_status_icon();
+        #ifdef NINTENDO
+            // Show a status icon if link connected
+            link_update_status_icon();
+        #endif
 
         SHOW_BKG;
 }
@@ -220,10 +275,9 @@ void board_gfx_tail_animate(void) {
     // Can't be an else-if since it would miss tail_anim_count = 0
     if (tail_anim_count < TAIL_ANIM_FRAMES_PER_SET) {
 
-        // Note: the OR of tail_anim_alternate only works if it's 8 frames total and one batch
-        // otherwise use +
-        set_bkg_data(pet_tail_anim_tilenum[tail_anim_count | tail_anim_alternate],
-                     ANIM_TAIL_BATCH_SIZE,
-                     p_pet_tiles + pet_tail_anim_srcoffset[tail_anim_count | tail_anim_alternate]);
-    }
+        set_bkg_data_pal_compat(pet_tail_anim_dest_tilenum[tail_anim_count],
+                                   ANIM_TAIL_BATCH_SIZE,
+                                   p_pet_tiles + pet_tail_anim_srcoffset[tail_anim_count + tail_anim_alternate],
+                                   pet_tiles_pals + pet_tail_anim_pal_srcoffset[tail_anim_count + tail_anim_alternate]);
+     }
 }

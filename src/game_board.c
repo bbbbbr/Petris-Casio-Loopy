@@ -12,13 +12,16 @@
 // game_board.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 #include <rand.h>
 
 #include "audio_common.h"
 #include "common.h"
-#include "serial_link.h"
+#include "platform_compat.h"
+
+#ifdef NINTENDO
+    #include "serial_link.h"
+#endif
 
 #include "game_board.h"
 #include "game_board_special_pieces.h"
@@ -103,7 +106,6 @@ void board_redraw_all(void) {
     set_bkg_tiles(BRD_ST_X, BRD_ST_Y,
                   BRD_WIDTH, BRD_HEIGHT,
                   &board_attrib[0]);
-
     VBK_REG = 0; // Re-Select regular BG tile map
 }
 
@@ -175,22 +177,18 @@ void board_crunch_up(void) {
     } // end: if (game_state != GAME_ENDED)
 }
 
-
 // Redraws single tile on board
 //
 void board_draw_tile_xy(INT8 x, INT8 y, UINT8 tile_index) {
 
+
     // Update BG Tilemap from Game Board
     VBK_REG = 1; // Select BG tile attribute map
-    set_bkg_tiles(BRD_ST_X + x, BRD_ST_Y + y,
-                  1, 1,
-                  &board_attrib[tile_index]);
+    set_bkg_tile_xy(BRD_ST_X + x, BRD_ST_Y + y, board_attrib[tile_index]);
 
     // Update BG Attrib Map from Game Board
     VBK_REG = 0; // Re-Select regular BG tile map
-    set_bkg_tiles(BRD_ST_X + x, BRD_ST_Y + y,
-                  1, 1,
-                  &board_pieces[tile_index]);
+    set_bkg_tile_xy(BRD_ST_X + x, BRD_ST_Y + y, board_pieces[tile_index]);
 }
 
 
@@ -337,6 +335,11 @@ void board_set_tile_xy(INT8 x, INT8 y, UINT8 piece, UINT8 attrib, UINT8 connect)
         // Add in offset to start of BG tile piece data
         piece += TILES_PET_START;
 
+        // Override attributes and force second palette
+        #if defined(GAMEGEAR)
+            attrib = GG_TILE_ATTR_MSB_PAL_1;
+        #endif // GAMEGEAR
+
         // Update piece
         // Set palette based on pet type (CGB Pal bits are 0x07)
         // Update connection setting
@@ -399,6 +402,7 @@ void game_board_fill_random_tails(UINT8 piece_count, INT8 board_min_y, UINT8 add
         // y = ((UINT8)DIV_REG % (BRD_HEIGHT - BRD_MIN_Y_RANDOM_FILL + 1)) + BRD_MIN_Y_RANDOM_FILL ;
         x = (UINT8)rand() % BRD_WIDTH;
         y = ((UINT8)rand() % (BRD_HEIGHT - board_min_y)) + board_min_y;
+
         index = x + (y * BRD_WIDTH);
 
         // Loop until the randomly selected spot is free
@@ -427,14 +431,14 @@ void game_board_fill_random_tails(UINT8 piece_count, INT8 board_min_y, UINT8 add
             piece_count--;
 
             // piece = ((UINT8)DIV_REG & GP_PET_MASK_NOSHIFT) |
+            // 270 degree rotation is tail pointed down, torso part up
             piece = (pet_type_bits) |
                     (body_seg << GP_SEG_UPSHIFT) |
-                    (GP_ROT_VERT << GP_ROT_UPSHIFT);
+                    (GP_ROTATE_270 << GP_ROT_UPSHIFT);
 
             // Set palette based on pet type (CGB Pal bits are 0x07)
             // And mirror bits based on rotation setting from LUT
-            attrib = ((piece & GP_PET_MASK) >> GP_PET_UPSHIFT) // Palette
-                      | GP_ROT_LUT_ATTR[GP_ROTATE_270];               // Rotation sprite mirror bits
+            attrib = (piece & GP_PET_MASK) >> GP_PET_UPSHIFT; // Palette based on pet
 
             board_set_tile_xy((INT8)x, (INT8)y,
                               piece, attrib,
@@ -532,21 +536,22 @@ void board_handle_pet_completed(UINT8 flags) {
         score_and_level_update(BRD_PIECE_CLEAR_COUNT_NONE);
     } else {
 
-        // If in 2 player versus mode and the bonus length
-        // threshold is met or passed, send N crunch ups
-        // based on pet-length
-        if ((link_status == LINK_STATUS_CONNECTED) &&
-            (board_tile_clear_count >= VS_CRUNCH_THR)) {
+        #ifdef NINTENDO
+            // If in 2 player versus mode and the bonus length
+            // threshold is met or passed, send N crunch ups
+            // based on pet-length
+            if ((link_status == LINK_STATUS_CONNECTED) &&
+                (board_tile_clear_count >= VS_CRUNCH_THR)) {
 
-                // Number of crunch-ups sent is a function of length
-                // Cap max number to fit within serial data payload
-                // (unlikely to exceed in reality)
-                crunchups_to_send = (board_tile_clear_count / VS_CRUNCH_THR);
-                if (crunchups_to_send > LINK_DATA_MASK)
-                    crunchups_to_send = LINK_DATA_MASK;
-                LINK_SEND(LINK_CMD_CRUNCHUP | (crunchups_to_send & LINK_DATA_MASK));
-        }
-
+                    // Number of crunch-ups sent is a function of length
+                    // Cap max number to fit within serial data payload
+                    // (unlikely to exceed in reality)
+                    crunchups_to_send = (board_tile_clear_count / VS_CRUNCH_THR);
+                    if (crunchups_to_send > LINK_DATA_MASK)
+                        crunchups_to_send = LINK_DATA_MASK;
+                    LINK_SEND(LINK_CMD_CRUNCHUP | (crunchups_to_send & LINK_DATA_MASK));
+            }
+        #endif
 
         // Check completed pet size against level-up size requirement if it's Long pet game type
         if (option_game_type == OPTION_GAME_TYPE_LONG_PET) {

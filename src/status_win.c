@@ -11,10 +11,10 @@
 
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 
 #include "common.h"
+#include "platform_compat.h"
 
 #include "gfx.h"
 #include "gfx_print.h"
@@ -50,6 +50,7 @@ const UINT8 popup_win_row_pal[] = {BG_PAL_7, BG_PAL_7, BG_PAL_7, BG_PAL_7, BG_PA
 //       and all background tile loading
 void status_win_popup_init(void) {
 
+#ifdef NINTENDO
     UINT8 y;
     UINT8 * tile_row;
 
@@ -75,11 +76,13 @@ void status_win_popup_init(void) {
 
         set_win_tiles(SCREEN_MIN_X, y, SCREEN_MAX_X + 1, 1, tile_row);
     }
+#endif // NINTENDO
 }
 
 
 void status_win_popup_show(UINT8 y_min) {
 
+#ifdef NINTENDO
     UINT8 c;
 
     HIDE_SPRITES;
@@ -89,11 +92,13 @@ void status_win_popup_show(UINT8 y_min) {
         WY_REG = c;
         delay(WIN_SCROLL_DELAY);
     }
+#endif // NINTENDO
 }
 
 
 void status_win_popup_hide(void) {
 
+#ifdef NINTENDO
     UINT8 c;
 
     for (c = WY_REG; c < WIN_Y_MAX; c++) {
@@ -102,4 +107,5 @@ void status_win_popup_hide(void) {
     }
     HIDE_WIN;
     SHOW_SPRITES;
+#endif // NINTENDO
 }

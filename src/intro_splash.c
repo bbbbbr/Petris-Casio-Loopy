@@ -12,13 +12,14 @@
 // intro_splash.h
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 
 #include "gfx.h"
 #include "gfx_print.h"
 #include "input.h"
 #include "fade.h"
+#include "common.h"
+#include "platform_compat.h"
 
 #include "intro_splash.h"
 
@@ -37,7 +38,7 @@ UINT8  effect_y_line = 0;
 
 void hblank_effect_isr() {
 
-
+#ifdef NINTENDO
     // Don't start until line [effect_y_line]
     if (LY_REG > effect_y_line) {
 
@@ -92,21 +93,25 @@ void hblank_effect_isr() {
                 SCX_REG = 255U - scroll_x_amount;
         #endif
     }
+#endif // NINTENDO
 }
 
 
 void intro_splash(void) {
 
+#ifdef NINTENDO
     // Scroll so graphics are off-screen to start
     SCY_REG = 100;
+#endif // NINTENDO
 
     fade_set_pal(BG_PAL_0, 1, intro_cat_palette, FADE_PAL_BKG);
 
     set_bkg_data(TILES_SPLASH_START, TILE_COUNT_SPLASH, intro_cat_tiles);
 
-    // Load BG tile attribute map
-    VBK_REG = 1;
-    set_bkg_tiles(6, 5, intro_cat_mapWidth, intro_cat_mapHeight, intro_cat_mapPLN1);
+    // // Load BG tile attribute map
+    // VBK_REG = 1;
+    // set_bkg_tiles(6, 5, intro_cat_mapWidth, intro_cat_mapHeight, intro_cat_mapPLN1);
+    set_bkg_tiles_attr_compat(6, 5, intro_cat_mapWidth, intro_cat_mapHeight, intro_cat_mapPLN1);
 
     // Load BG tile map
     VBK_REG = 0;
@@ -117,6 +122,7 @@ void intro_splash(void) {
     fade_start(FADE_IN);
 
 
+#ifdef NINTENDO
     // ========== START EFFECT ==========
 
     effect_y_line = 0U + EFFECT_START_Y;
@@ -148,8 +154,12 @@ void intro_splash(void) {
     disable_interrupts();
     set_interrupts(VBL_IFLAG);
     enable_interrupts();
+#elif defined(GAMEGEAR)
+    // No fancy effects for GG
+    delay(1000);
+#endif // NINTENDO
 
-    // ========== START EFFECT ==========
+    // ========== END EFFECT ==========
 
     delay(500);
     fade_start(FADE_OUT);

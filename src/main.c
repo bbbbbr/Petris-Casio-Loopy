@@ -10,16 +10,20 @@
 // See: http://creativecommons.org/licenses/by-nc-sa/4.0/
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 
 // #include "bgb_emu.h" // Used for debugging only, see BGB_MESSAGE
 
 #include "common.h"
-#include "serial_link.h"
+#include "platform_compat.h"
+#ifdef NINTENDO
+    #include "serial_link.h"
+#endif
 
 #include "sound.h"
-#include "gbt_player.h"
 #include "audio_common.h"
+#ifdef NINTENDO
+    #include "gbt_player.h"
+#endif
 
 #include "fade.h"
 
@@ -40,7 +44,10 @@
 #include "input.h"
 #include "gfx.h"
 #include "gfx_print.h"
-#include "serial_link.h"
+
+#ifdef NINTENDO
+    #include "serial_link.h"
+#endif
 
 #include "magic_code.h"
 
@@ -54,7 +61,12 @@ void init_interrupts(void);
 void vbl_update(void);
 void init_sound(void);
 
-UINT8 vbl_count = 0;
+#ifdef NINTENDO
+    UINT8 vbl_count = 0;
+#elif defined(GAMEGEAR)
+    UINT8 vbl_count = 1;
+#endif // GAMEGEAR
+
 
 #define ASM_HALT \
 __asm \
@@ -63,6 +75,7 @@ __endasm
 
 void handle_non_cgb() {
 
+#ifdef NINTENDO
     // _cpu will return CGB_TYPE for both CGB and GBA
     if (_cpu != CGB_TYPE) {
         // BGB_MESSAGE("DMG DETECTED");
@@ -76,9 +89,10 @@ void handle_non_cgb() {
             ASM_HALT; // Use less power while idle
         }
     }
+#endif // NINTENDO
 }
 
-
+#ifdef NINTENDO
 void vbl_update() {
     vbl_count++;
 
@@ -101,16 +115,20 @@ void vbl_update() {
         }
     }
 }
+#endif // NINTENDO
 
 
 void init_sound(void) {
+#ifdef NINTENDO
     NR52_REG = 0x80; // Enables sound, always set this first
     NR51_REG = 0xFF; // Enables all channels (left and right)
     NR50_REG = 0x77; // Max volume
+#endif // NINTENDO
 }
 
 
 void init_interrupts() {
+#ifdef NINTENDO
     disable_interrupts();
     add_VBL(vbl_update);
     // add_TIM(update_gbt_music); // Moved this into vbl_udpate() as workaround for occasional gfx glitches
@@ -127,14 +145,17 @@ void init_interrupts() {
     set_interrupts(VBL_IFLAG);
 
     enable_interrupts();
+#endif // NINTENDO
 }
 
 
 void init (void) {
 
+#ifdef NINTENDO
     vbl_count = 0;
     music_mute_frames = 0;
     gbt_stop();
+#endif // NINTENDO
 
     game_state = GAME_INTRO_INIT;
 
@@ -147,7 +168,9 @@ void init (void) {
         cpu_fast();
     #endif
 
-    init_link();
+    #ifdef NINTENDO
+        link_reset();
+    #endif
 
     init_sound();
 
@@ -238,17 +261,22 @@ void main(void){
 
 
             case GAME_ENDED:
-                if (link_status == LINK_STATUS_CONNECTED) {
-                    // If in 2 player versus mode, notify other player they won
-                    // The command is sent from here since GAME_ENDED can be
-                    // triggered in multiple locations based on game type
-                    LINK_SEND(LINK_CMD_OPPONENT_LOST);
+                #ifdef NINTENDO
+                    if (link_status == LINK_STATUS_CONNECTED) {
+                        // If in 2 player versus mode, notify other player they won
+                        // The command is sent from here since GAME_ENDED can be
+                        // triggered in multiple locations based on game type
+                        LINK_SEND(LINK_CMD_OPPONENT_LOST);
 
-                    GAMEOVER_MESSAGE_SET(SPR_YOU_LOST_CHARS);
-                } else {
+                        GAMEOVER_MESSAGE_SET(SPR_YOU_LOST_CHARS);
+                    } else {
+                        // Non-link mode gets regular game over text
+                        GAMEOVER_MESSAGE_SET(SPR_GAMEOVER_CHARS);
+                    }
+                #elif defined(GAMEGEAR)
                     // Non-link mode gets regular game over text
                     GAMEOVER_MESSAGE_SET(SPR_GAMEOVER_CHARS);
-                }
+                #endif // GAMEGEAR
 
                 game_state = GAME_OVER_SCREEN;
                 break;

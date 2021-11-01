@@ -12,9 +12,9 @@
 // magic_code.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 
 #include "common.h"
+#include "platform_compat.h"
 #include "input.h"
 #include "audio_common.h"
 

@@ -12,11 +12,14 @@
 // game_piece.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <rand.h>
 
 #include "common.h"
-#include "serial_link.h"
+#include "platform_compat.h"
+
+#ifdef NINTENDO
+    #include "serial_link.h"
+#endif
 
 #include "options.h"
 #include "gfx.h"
@@ -43,7 +46,7 @@ void  game_piece_next_reset(void) {
 // For example:
 // game_piece_next = ((GP_PET_DOG  << GP_PET_UPSHIFT) |
 //                    (GP_SEG_TAIL << GP_SEG_UPSHIFT) |
-//                     GP_ROT_HORZ << GP_ROT_UPSHIFT);// + TILES_PET_START;
+//                     GP_ROTATE_0 << GP_ROT_UPSHIFT);// + TILES_PET_START;
 //
 // OPTIONAL: IMPROVE NEW PIECE SELECTION
 void game_piece_next_generate(void) {
@@ -58,15 +61,19 @@ void game_piece_next_generate(void) {
     } else {
         // Otherwise generate a single random new pet tile piece
 
-        // If connected by link then only use rand() so that the
-        // games follow the same random number sequence
-        if (link_status == LINK_STATUS_CONNECTED) {
-            // 2-Player mode
-            game_piece_next = ((UINT8)rand() & 0x1F);
-        } else {
-            // In 1-player mode mix in DIV_REG for a little more variety to the random number sequence
-            game_piece_next = ((UINT8)(rand() ^ DIV_REG) & 0x1F);
-        }
+        #ifdef NINTENDO
+            // If connected by link then only use rand() so that the
+            // games follow the same random number sequence
+            if (link_status == LINK_STATUS_CONNECTED) {
+                // 2-Player mode
+                game_piece_next = ((UINT8)rand() & GP_PET_BITS_MASK);
+            } else {
+                // In 1-player mode mix in DIV_REG for a little more variety to the random number sequence
+                game_piece_next = ((UINT8)(rand() ^ DIV_REG) & GP_PET_BITS_MASK);
+            }
+        #elif defined(GAMEGEAR)
+            game_piece_next = ((UINT8)(rand() ^ DIV_REG) & GP_PET_BITS_MASK);
+        #endif // GAMEGEAR
 
 
         // == New piece adjusments to improve player experience in various modes ==
@@ -136,10 +143,8 @@ void game_piece_next_show(UINT8 do_show) {
 
     if ((do_show) && (option_game_preview_next == NEXT_PREV_ON)) {
 
-        // Update player rotation (clear rotate bits and then set)
-        set_sprite_tile(SPR_PLAYER_NEXT,
-                        (game_piece_next & ~GP_ROT_MASK)
-                        | GP_ROT_LUT_TILE[GP_ROTATE_DEFAULT]);
+        // Update player rotation to default (0 degrees) (clear rotate bits and then set)
+        set_sprite_tile(SPR_PLAYER_NEXT, (game_piece_next & ~GP_ROT_MASK) | GP_ROTATE_DEFAULT_BITS);
 
         // Set palette based on pet type (CGB Pal bits are 0x07)
         // And mirror bits based on rotation setting from LUT
@@ -148,9 +153,13 @@ void game_piece_next_show(UINT8 do_show) {
             attrib = GP_PAL_SPECIAL;
 
         } else {
-            attrib = ((game_piece_next & GP_PET_MASK) >> GP_PET_UPSHIFT) // Palette
-                      | GP_ROT_LUT_ATTR[GP_ROTATE_DEFAULT];               // Rotation sprite mirror bits
+            attrib = (game_piece_next & GP_PET_MASK) >> GP_PET_UPSHIFT; // Palette based on pet
         }
+
+        // Override attributes and force second palette
+        #if defined(GAMEGEAR)
+            attrib = GG_TILE_ATTR_PAL_1;
+        #endif // GAMEGEAR
 
         set_sprite_prop(SPR_PLAYER_NEXT, attrib);
 
@@ -160,6 +169,7 @@ void game_piece_next_show(UINT8 do_show) {
                     GAME_PIECE_NEXT_PREVIEW_Y);
     } else {
         // Hide sprite
-        move_sprite(SPR_PLAYER_NEXT, 0,0);
+        // TODO: GAMEGEAR- CHECK
+        move_sprite(SPR_PLAYER_NEXT, 0, 0);
     }
 }

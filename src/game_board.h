@@ -29,8 +29,8 @@
 #define BRD_NEWPIECE_Y BRD_ST_Y
 
 // OAM Sprite coordinates are for LOWER RIGHT of sprite
-#define OAM_SPRITE_X_OFFSET 8
-#define OAM_SPRITE_Y_OFFSET 16
+#define OAM_SPRITE_X_OFFSET (8 + SPRITE_OFS_X)
+#define OAM_SPRITE_Y_OFFSET (16 + SPRITE_OFS_Y)
 #define BRD_PIECE_X_OFFSET (OAM_SPRITE_X_OFFSET + (BRD_ST_X * BRD_UNIT_SIZE))
 #define BRD_PIECE_Y_OFFSET (OAM_SPRITE_Y_OFFSET + (BRD_ST_Y * BRD_UNIT_SIZE))
 
@@ -66,8 +66,15 @@
 
 #define MSG_LONG_PET_X  BRD_ST_X + 0
 #define MSG_LONG_PET_Y  BRD_ST_Y + 3
-#define MSG_LONG_PET_START_TEXT    "        \n\n   LONG\n   PET!\n\n (PRESS\n  SELECT\n\n  FOR PET\n  SIZES)\n "
-#define MSG_LONG_PET_START_CTEXT   "  MAKE A\n\n   LONG\n   PET!\n\n (PRESS\n  SELECT\n\n  FOR PET\n  SIZES)\n "
+
+#ifdef NINTENDO
+    #define MSG_LONG_PET_START_TEXT    "        \n\n   LONG\n   PET!\n\n (PRESS\n  SELECT\n\n  FOR PET\n  SIZES)\n "
+    #define MSG_LONG_PET_START_CTEXT   "  MAKE A\n\n   LONG\n   PET!\n\n (PRESS\n  SELECT\n\n  FOR PET\n  SIZES)\n "
+#elif defined(GAMEGEAR)
+    #define MSG_LONG_PET_START_TEXT    "        \n\n   LONG\n   PET!\n\n (PRESS\n    UP\n\n  FOR PET\n  SIZES)\n "
+    #define MSG_LONG_PET_START_CTEXT   "  MAKE A\n\n   LONG\n   PET!\n\n (PRESS\n    UP\n\n  FOR PET\n  SIZES)\n "
+#endif
+
 #define MSG_LONG_PET_START_REPEAT 3
 
 #define MSG_COMPLETE_PET_X  BRD_ST_X + 0

@@ -22,7 +22,7 @@
 
 // For background palettes only
 // Fixed number of palettes to operate on, to reduce memory and increase speed
-#define FADE2PAL_PALNUM_START    4
+#define FADE2PAL_PALNUM_START    0 // 4
 #define FADE2PAL_NUM_PALS        4
 #define COLORS_PER_PAL  4
 #define BYTES_PER_COLOR 3

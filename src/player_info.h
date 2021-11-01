@@ -1,9 +1,10 @@
 // player_info.h
 
-
 #ifndef PLAYER_INFO_H
 #define PLAYER_INFO_H
 
+#include "common.h"
+#include "platform_compat.h"
 
 #define GAME_SPEED_LAUNCH_DELAY_FRAMES         6 // 1/10 of a second (60/10) in practice its n+1 frames due to the state machine lag
 #define GAME_SPEED_LAUNCH_DELAY_RESET          0
@@ -19,8 +20,8 @@
 #define GAME_PIECE_NEXT_PREVIEW_BG_X (DISPLAY_NEXT_PIECE_TEXT_X + 4) // Offset 4 tiles from start of text label
 #define GAME_PIECE_NEXT_PREVIEW_BG_Y (DISPLAY_NEXT_PIECE_TEXT_Y)
 
-#define GAME_PIECE_NEXT_PREVIEW_X ( (GAME_PIECE_NEXT_PREVIEW_BG_X + 1) * 8)
-#define GAME_PIECE_NEXT_PREVIEW_Y ( (GAME_PIECE_NEXT_PREVIEW_BG_Y + 2) * 8)
+#define GAME_PIECE_NEXT_PREVIEW_X ( (GAME_PIECE_NEXT_PREVIEW_BG_X + 1) * 8) + SPRITE_OFS_X
+#define GAME_PIECE_NEXT_PREVIEW_Y ( (GAME_PIECE_NEXT_PREVIEW_BG_Y + 2) * 8) + SPRITE_OFS_Y
 
 #define DISPLAY_LEVEL_X 1
 #define DISPLAY_LEVEL_Y 4

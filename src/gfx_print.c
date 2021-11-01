@@ -12,13 +12,15 @@
 // gfx_print.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include "asm/types.h"
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <types.h>
+
+#include "common.h"
+#include "platform_compat.h"
 
 #include "input.h"
 #include "audio_common.h"
@@ -70,11 +72,14 @@ void print_num_u16(UINT8 x, UINT8 y, UINT16 num, UINT8 print_digits) {
         // Draw the digits on the background
 
         // Update BG Tilemap from Game Board
-        VBK_REG = 1; // Select BG tile attribute map
-        set_bkg_tiles(x,
-                      y,
-                      print_digits, 1, // 1 tile high
-                      &digits_attribs[index + (PRINT_MAX_DIGITS - print_digits) ]); // Start at first digit and go to end of array
+        // VBK_REG = 1; // Select BG tile attribute map
+        // set_bkg_tiles(x,
+        //               y,
+        //               print_digits, 1, // 1 tile high
+        //               &digits_attribs[index + (PRINT_MAX_DIGITS - print_digits) ]); // Start at first digit and go to end of array
+        set_bkg_tiles_attr_compat(x, y,
+                                  print_digits, 1, // 1 tile high
+                                  &digits_attribs[index + (PRINT_MAX_DIGITS - print_digits) ]); // Start at first digit and go to end of array
 
         // Update BG Tilemap from Game Board
         VBK_REG = 0; // Re-Select regular BG tile map
@@ -127,8 +132,9 @@ void print_text(const char* txt, unsigned char delay_time){
 
         if(print_target == PRINT_BKG) {
 
-            VBK_REG = 1; // Select BG tile attribute map
-            set_bkg_tiles(0x1F & (print_x), 0x1F & (print_y), 1, 1, &print_tile_attribs);
+            // VBK_REG = 1; // Select BG tile attribute map
+            // set_bkg_tiles(0x1F & (print_x), 0x1F & (print_y), 1, 1, &print_tile_attribs);
+            set_bkg_tiles_attr_compat(0x1F & (print_x), 0x1F & (print_y), 1, 1, &print_tile_attribs);
 
             VBK_REG = 0; // Select BG tile map
             set_bkg_tiles(0x1F & (print_x), 0x1F & (print_y), 1, 1, &c);

@@ -9,6 +9,12 @@
 /** Swaps between primary and secondary random number state vars.
     Allows running two sequences in parallel
 */
-void swaprand(void); /* Non-banked */
+
+#ifdef NINTENDO
+	void swaprand(void); /* Non-banked */
+#elif defined(GAMEGEAR)
+	inline void swaprand(void) { }
+#endif
+
 
 #endif

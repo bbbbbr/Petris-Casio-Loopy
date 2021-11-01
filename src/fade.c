@@ -1,6 +1,7 @@
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 
+#include "common.h"
+#include "platform_compat.h"
 #include "fade.h"
 
 
@@ -8,17 +9,31 @@
 #define PAL_FADE_BLACK
 // #define PAL_FADE_NONE
 
-#define FADE_IN_START 5
+#ifdef NINTENDO
+    // BGR:5:5:5
+                             //   x    B    G    R
+    #define FADE_EXCLUDE_LSBITS 0b0111101111011110
+    const UWORD FADE_LUT[6] = {0b0000000000000000,  // No white present to mix
+                               0b0000010000100001,
+                               0b0000110001100011,
+                               0b0001110011100111,
+                               0b0011110111101111,
+                               0b0111111111111111}; // Full white present to mix
+#elif defined(GAMEGEAR)
+    // BGR:4:4:4
+                             //   x      B   G   R
+    #define FADE_EXCLUDE_LSBITS 0b0000111011101110
+    const UWORD FADE_LUT[5] = {0b0000000000000000,  // No white present to mix
+                               0b0000000100010001,
+                               0b0000001100110011,
+                               0b0000011101110111,
+                               0b0000111111111111}; // Full white present to mix
+#endif // GAMEGEAR
+
+
+#define FADE_IN_START (ARRAY_LEN(FADE_LUT) - 1)
 #define FADE_OUT_START 0
 
-#define FADE_EXCLUDE_LSBITS 0b0111101111011110
-                        //   x    R    G    B
-const UWORD FADE_LUT[6] = {0b0000000000000000,  // No white present to mix
-                           0b0000010000100001,
-                           0b0000110001100011,
-                           0b0001110011100111,
-                           0b0011110111101111,
-                           0b0111111111111111}; // Full white present to mix
 
 // Fade palette pointers needs to be initialized to something
 // So just point them at the Fade LUT (which will have a gradient of greys)
@@ -68,7 +83,7 @@ void fade_start(INT8 fade_dir) {
 
     i = (fade_dir == FADE_OUT) ? FADE_OUT_START : FADE_IN_START; // Set loop start (5 for fade in, 0 for fade out)
 
-    while ((i != -1) && (i != 6)) {
+    while ((i != -1) && (i != ARRAY_LEN(FADE_LUT))) {
 
         p_mod_bg = &ModPalBg[0];
         p_mod_sp = &ModPalSprite[0];
@@ -108,7 +123,7 @@ void fade_start(INT8 fade_dir) {
 
                     } else {
                         // Fade in/out from Black
-                        fade_mask = FADE_LUT[5 - i];
+                        fade_mask = FADE_LUT[(ARRAY_LEN(FADE_LUT) - 1) - i];
 
                         *p_mod_bg = ((*p_bg) >> i) & fade_mask;
                         *p_mod_sp = ((*p_sp) >> i) & fade_mask;
@@ -132,6 +147,7 @@ void fade_start(INT8 fade_dir) {
         }
         // Apply current step of faded palette colors
 
+#ifdef NINTENDO
         // To avoid flickering:
         // Wait until VBlank (mode == 1) and then write palette in one big chunk
         // Doing the opposite and gating with wait_vbl_done() yields mild top-of-screen flicker
@@ -140,6 +156,18 @@ void fade_start(INT8 fade_dir) {
 
         while((STAT_REG & (STATF_HBL | STATF_VBL | STATF_OAM | STATF_LCD)) != STATF_VBL);
         set_sprite_palette(0, 8, ModPalSprite);
+
+#elif defined(GAMEGEAR)
+        // 2 x 16 color palettes
+        //
+        // Backgrounds can use BOTH
+        // Sprites can only use SECOND
+        // set_bkg_palette(0, 1, &ModPalBg[16]);     // Put non-shared Background colors in First Pal
+        // set_bkg_palette(1, 1, &ModPalSprite[16]); // Put Sprite / Background colors in Second Pal
+        set_bkg_palette(0, 1, ModPalBg);     // BG pal gets first "4 CGB Pals" / non-shared Background colors in First Pal
+        set_bkg_palette(1, 1, ModPalSprite); // Sprite pal gets second "4 CGB pals" into Second Pal / Put Sprite / Background colors in Second Pal
+
+#endif // GAMEGEAR
 
         // Wait a little while before performing the next step
         delay(40);

@@ -4,9 +4,16 @@
 
 #include "sound.h"
 
-#include "gbt_player.h"
+#ifdef NINTENDO
+    #include "gbt_player.h"
+#endif
+
 #include "options.h"
-#include "unapack.h"
+
+#ifdef NINTENDO
+    #include "unapack.h"
+#endif
+
 
 #define MUSIC_NONE 0
 UINT8 music_mute_frames = 0;
@@ -31,6 +38,7 @@ unsigned char * music_seq_addrs[MUSIC_SEQ_ADDR_COUNT_MAX];
 
 
 void PlayFx(SOUND_CHANNEL channel, UINT8 mute_frames, ...) {
+#ifdef NINTENDO
 	UINT8 i;
 	UINT8* reg = (UINT8*)FX_ADDRESS[channel];
 	va_list list;
@@ -46,10 +54,12 @@ void PlayFx(SOUND_CHANNEL channel, UINT8 mute_frames, ...) {
 	}
 
 	music_mute_frames = mute_frames;
+#endif
 }
 
 
 void MusicStop(void) {
+#ifdef NINTENDO
     gbt_stop();
 
     // Reset last_music so that music will resume properly.
@@ -59,6 +69,7 @@ void MusicStop(void) {
     NR52_REG = 0x80; // Enables sound, always set this first
     NR51_REG = 0xFF; // Enables all channels (left and right)
     NR50_REG = 0x77; // Max volume
+#endif
 }
 
 
@@ -80,6 +91,7 @@ void MusicStop(void) {
 // Requires modified mod2gbt which produces a single large array and list of offsets
 void MusicPlay(const unsigned char music_compressed[], const unsigned int music_seq_offset[], unsigned char loop) {
 
+#ifdef NINTENDO
     UINT8 c;
 
     if (music_compressed != last_music) {
@@ -109,11 +121,13 @@ void MusicPlay(const unsigned char music_compressed[], const unsigned int music_
         gbt_loop(loop);
         // REFRESH_BANK; // WARNING: re-enable if using banking with an MBC
     }
+#endif
 }
 
 
 void MusicUpdateStatus() {
 
+#ifdef NINTENDO
     if (option_game_music == OPTION_MUSIC_TWILIGHT)
         MusicPlay(twilight_drive_mod, twilight_drive_mod_Data, GBT_LOOP_YES);
     else if (option_game_music == OPTION_MUSIC_UPBEAT)
@@ -122,9 +136,12 @@ void MusicUpdateStatus() {
        MusicPlay(villainsofhiphop_mod, villainsofhiphop_mod_Data, GBT_LOOP_YES);
     else
         MusicStop();
+#endif
 }
 
 void update_gbt_music() {
+#ifdef NINTENDO
     gbt_update();
     // REFRESH_BANK; // WARNING: re-enable if using banking with an MBC
+#endif
 }

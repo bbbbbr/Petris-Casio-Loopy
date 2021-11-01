@@ -12,7 +12,6 @@
 // player_info.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 
 #include "audio_common.h"
@@ -20,7 +19,9 @@
 #include "gfx_print.h"
 #include "player_info.h"
 
-#include "serial_link.h"
+#ifdef NINTENDO
+    #include "serial_link.h"
+#endif
 
 #include "game_piece.h"
 #include "game_piece_data.h"
@@ -154,7 +155,9 @@ void score_and_level_update(UINT16 num_tiles) {
 
         // Changed: Always send crunch-up on level-up, to make it more competitive
 
+        #ifdef NINTENDO
             LINK_SEND(LINK_CMD_CRUNCHUP | 0x01 );
+        #endif
         //}
 
         level_increment();

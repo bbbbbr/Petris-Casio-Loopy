@@ -1,7 +1,6 @@
 // input.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 
 #include "input.h"
 

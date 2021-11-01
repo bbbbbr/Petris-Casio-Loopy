@@ -23,7 +23,11 @@ typedef enum GAME_STATES {
     GAME_OVER_WAITEXIT,
 };
 
-extern UINT8 game_state;
+#ifdef GAMEGEAR
+    // Alternate source for random number seed
+    #define DIV_REG sys_time
+#endif // GAMEGEAR
 
+extern UINT8 game_state;
 
 #endif

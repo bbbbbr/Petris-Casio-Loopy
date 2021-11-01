@@ -10,7 +10,6 @@
 // See: http://creativecommons.org/licenses/by-nc-sa/4.0/
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h>
 
 #include "fade2pal.h"
 #include "gfx_board_fadepals.h"
@@ -80,12 +79,25 @@ void fade2pal_start_next(void) {
 
 // Color Palette entry bit packing
 // UINT16
-// Component: x BBBBB GGGGG RRRRR
-// Bits used: F EDCBA 98765 43210
+// CGB: BG:5:5:5
+//   Component: x BBBBB GGGGG RRRRR
+//   Bits used: F EDCBA 98765 43210
+//
+// GG: BGR:4:4:4
+//   Component: x xxxBB BBGGG GRRRR
+//   Bits used: F EDCBA 98765 43210
+
+#ifdef NINTENDO
+    #define COLOR_COMPONENT_MASK 0x1F // 5 bits per component
+    #define COLOR_COMPONENT_BITS 5
+#elif defined(GAMEGEAR)
+    #define COLOR_COMPONENT_MASK 0x0F // 4 bits per component
+    #define COLOR_COMPONENT_BITS 4
+#endif
 
 // NOTE: Background Palettes ONLY
 // NOTE: Assumes palettes (FADE2PAL_NUM_PALS) are contiguous
-void fade2pal_prep_fade(UINT8 * p_dest_pal_gbr) {
+void fade2pal_prep_fade(UINT8 * p_dest_pal_bgr) {
 
     // Extract RGB from current palettes
     UINT16 * p_src_pal = &ModPalBg[FADE2PAL_PALNUM_START * COLORS_PER_PAL];
@@ -96,11 +108,11 @@ void fade2pal_prep_fade(UINT8 * p_dest_pal_gbr) {
     for (c = 0; c < FADE2PAL_ARY_SIZE; c++) {
 
 
-        // Initialze current channel of current palette color
+        // Initialize current channel of current palette color
         // Need to decode in order of B -> G -> R
         // Note: function could be inlined here
-        fade2pal_calc_entry( (UINT8)(t_color >> (5 * pal_inc)) & 0x1F, // color FROM
-                            *p_dest_pal_gbr,       // color TO
+        fade2pal_calc_entry( (UINT8)(t_color >> (COLOR_COMPONENT_BITS * pal_inc)) & COLOR_COMPONENT_MASK, // color FROM
+                            *p_dest_pal_bgr,       // color TO
                             c);                    // color lerp index
 
         // Load new palette color every 3rd step
@@ -116,7 +128,7 @@ void fade2pal_prep_fade(UINT8 * p_dest_pal_gbr) {
         }
 
         // next entry in color array
-        p_dest_pal_gbr++;
+        p_dest_pal_bgr++;
     }
 
     // Start frame counter
@@ -178,7 +190,7 @@ void fade2pal_update_entry(void) {
         // Upshift color component if needed
         // or move to next palette entry every third pass
         if (pal_inc) {
-            (*p_src_pal) <<= 5;
+            (*p_src_pal) <<= COLOR_COMPONENT_BITS;
             pal_inc--;
         } else {
             // Move to next palette entry
@@ -195,6 +207,7 @@ void fade2pal_update_entry(void) {
     // Decrement number of remaining frame updates
     fade2pal_frame_count--;
 
+#ifdef NINTENDO
     // Update Color Palettes
     // To avoid flickering:
     // Wait until VBlank (mode == 1) and then write palette in one big chunk
@@ -203,6 +216,18 @@ void fade2pal_update_entry(void) {
     set_bkg_palette(FADE2PAL_PALNUM_START,
                     FADE2PAL_NUM_PALS,
                     &ModPalBg[FADE2PAL_PALNUM_START * COLORS_PER_PAL]);
+#elif defined(GAMEGEAR)
+        // 2 x 16 color palettes
+        //
+        // Backgrounds can use BOTH
+//        set_bkg_palette(0, 1, ModPalBg);     // BG pal gets first "4 CGB Pals" / non-shared Background colors in First Pal
+        wait_vbl_done();
+        set_bkg_palette(FADE2PAL_PALNUM_START,
+                        FADE2PAL_NUM_PALS / 4, // GG palettes are 16 colors instead of 4
+                        &ModPalBg[FADE2PAL_PALNUM_START * COLORS_PER_PAL]);
+
+#endif // GAMEGEAR
+
 }
 
 

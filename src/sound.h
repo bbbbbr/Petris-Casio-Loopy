@@ -15,6 +15,7 @@ typedef enum {
 #define GBT_LOOP_YES 1
 
 
+// GAMEGEAR: Present but unused at this time
 // External mod music data from gbt_player's mod2gbt
 extern const unsigned int boss_fight_mod_Data[];
 extern const unsigned int twilight_drive_mod_Data[];
@@ -27,7 +28,6 @@ extern const unsigned char twilight_drive_mod[];
 extern const unsigned char freeost_charselect_mod[];
 extern const unsigned char villainsofhiphop_mod[];
 // extern const unsigned char falling_asleep_mod[];
-
 
 
 extern UINT8 music_mute_frames;

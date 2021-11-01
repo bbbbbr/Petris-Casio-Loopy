@@ -12,11 +12,11 @@
 // game_board_special_pieces.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 
 #include "audio_common.h"
 #include "common.h"
+#include "platform_compat.h"
 
 #include "game_board.h"
 #include "game_board_special_pieces.h"

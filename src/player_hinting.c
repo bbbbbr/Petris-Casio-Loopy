@@ -12,9 +12,9 @@
 // player_hinting.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 
 #include "common.h"
+#include "platform_compat.h"
 #include "input.h"
 #include "sound.h"
 #include "gfx.h"
@@ -77,8 +77,9 @@ void player_hinting_special_reset(void) {
 
         INT8 c;
 
-        for (c=SPR_SPECIAL_HINT_1; c <= SPR_SPECIAL_HINT_4; c++) {
-            move_sprite(c, 0, 0);
+        for (c = SPR_SPECIAL_HINT_1; c <= SPR_SPECIAL_HINT_4; c++) {
+            hide_sprite(c);
+            // move_sprite(c, 0, 0);
         }
 }
 
@@ -119,17 +120,17 @@ void player_hinting_special_move(void) {
         spr_x = (player_x * BRD_UNIT_SIZE) + BRD_PIECE_X_OFFSET;
         spr_y = (player_y * BRD_UNIT_SIZE) + BRD_PIECE_Y_OFFSET;
 
-        move_sprite(SPR_SPECIAL_HINT_1, spr_x + SPR_HINT_OFFSET_LUT_X[0],
-                                        spr_y + SPR_HINT_OFFSET_LUT_Y[0]);
+        move_sprite(SPR_SPECIAL_HINT_1, spr_x + SPR_HINT_OFFSET_LUT_X[0],// + SPRITE_OFS_X,
+                                        spr_y + SPR_HINT_OFFSET_LUT_Y[0]);// + SPRITE_OFS_Y);
 
-        move_sprite(SPR_SPECIAL_HINT_2, spr_x + SPR_HINT_OFFSET_LUT_X[1],
-                                        spr_y + SPR_HINT_OFFSET_LUT_Y[1]);
+        move_sprite(SPR_SPECIAL_HINT_2, spr_x + SPR_HINT_OFFSET_LUT_X[1],// + SPRITE_OFS_X,
+                                        spr_y + SPR_HINT_OFFSET_LUT_Y[1]);// + SPRITE_OFS_Y);
 
-        move_sprite(SPR_SPECIAL_HINT_3, spr_x + SPR_HINT_OFFSET_LUT_X[2],
-                                        spr_y + SPR_HINT_OFFSET_LUT_Y[2]);
+        move_sprite(SPR_SPECIAL_HINT_3, spr_x + SPR_HINT_OFFSET_LUT_X[2],// + SPRITE_OFS_X,
+                                        spr_y + SPR_HINT_OFFSET_LUT_Y[2]);// + SPRITE_OFS_Y);
 
-        move_sprite(SPR_SPECIAL_HINT_4, spr_x + SPR_HINT_OFFSET_LUT_X[3],
-                                        spr_y + SPR_HINT_OFFSET_LUT_Y[3]);
+        move_sprite(SPR_SPECIAL_HINT_4, spr_x + SPR_HINT_OFFSET_LUT_X[3],// + SPRITE_OFS_X,
+                                        spr_y + SPR_HINT_OFFSET_LUT_Y[3]);// + SPRITE_OFS_Y);
 }
 
 
@@ -236,18 +237,21 @@ void hinting_petlength_reset(void) {
         // and set sprites to non-visible (transparent tile)
 
         // First Digit
-        move_sprite(sprite_idx,     0,0);
+        hide_sprite(sprite_idx);
+        // move_sprite(sprite_idx,     0,0);
         set_sprite_tile(sprite_idx, GP_EMPTY);
         sprite_idx++;
 
         // Second Digit
-        move_sprite(sprite_idx, 0,0);
+        hide_sprite(sprite_idx);
+        // move_sprite(sprite_idx, 0,0);
         set_sprite_tile(sprite_idx, GP_EMPTY);
         sprite_idx++;
 
 
         // Hide and set tile for size hint sprite
-        move_sprite(sprite_idx, 0,0);
+        hide_sprite(sprite_idx);
+        // move_sprite(sprite_idx, 0,0);
         // These two could probably just be called once at the
         // start of a game instead of every level
         set_sprite_tile(sprite_idx, GP_CROSS);
@@ -316,11 +320,11 @@ void hinting_petlength_add(INT8 board_x, INT8 board_y, UINT8 length, UINT8 piece
 
     // Move sprites to board position
     move_sprite(sprite_idx,
-                (board_x * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_X,
-                (board_y * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_Y);
+                (board_x * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_X,// + SPRITE_OFS_X,
+                (board_y * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_Y);// + SPRITE_OFS_Y);
     move_sprite(sprite_idx + 1,
-                (board_x * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_X + 8,
-                (board_y * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_Y);
+                (board_x * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_X + 8,// + SPRITE_OFS_X,
+                (board_y * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_Y);// + SPRITE_OFS_Y);
 
     // Render sprite visible if enabled (via setting tile)
     if (hinting_petlength_enabled) {
@@ -336,8 +340,8 @@ void hinting_petlength_add(INT8 board_x, INT8 board_y, UINT8 length, UINT8 piece
     if (option_game_type == OPTION_GAME_TYPE_LONG_PET) {
         if (length >= (game_type_long_pet_required_size - 1)) {
             move_sprite(sprite_idx + 2,
-                        (board_x * BRD_UNIT_SIZE) + SPR_LONG_PET_SIZE_OFFSET_X,
-                        (board_y * BRD_UNIT_SIZE) + SPR_LONG_PET_SIZE_OFFSET_Y);
+                        (board_x * BRD_UNIT_SIZE) + SPR_LONG_PET_SIZE_OFFSET_X,// + SPRITE_OFS_X,
+                        (board_y * BRD_UNIT_SIZE) + SPR_LONG_PET_SIZE_OFFSET_Y);// + SPRITE_OFS_Y);
         }
     }
 }
@@ -420,7 +424,8 @@ void hinting_petlength_remove(INT8 board_x, INT8 board_y) {
             set_sprite_tile(sprite_idx + 1, GP_EMPTY);
 
             // Hide size hint cross sprite
-            move_sprite(sprite_idx + 2, 0,0);
+            hide_sprite(sprite_idx);
+            // move_sprite(sprite_idx + 2, 0,0);
 
             // Flag this slot as last removed for use on next add()
             // to avoid needlessly overwriting other entries.
@@ -479,13 +484,13 @@ void hinting_petlength_refreshxy(void) {
 
             // Move the sprite into view at board position
             move_sprite(sprite_idx,
-                        (hinting_petlength_x[c] * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_X,
-                        (hinting_petlength_y[c] * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_Y);
+                        (hinting_petlength_x[c] * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_X,// + SPRITE_OFS_X,
+                        (hinting_petlength_y[c] * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_Y);// + SPRITE_OFS_Y);
 
             // Move the sprite into view at board position
             move_sprite(sprite_idx + 1,
-                        (hinting_petlength_x[c] * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_X + 8,
-                        (hinting_petlength_y[c] * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_Y);
+                        (hinting_petlength_x[c] * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_X + 8,// + SPRITE_OFS_X,
+                        (hinting_petlength_y[c] * BRD_UNIT_SIZE) + SPR_LONG_PET_HINT_OFFSET_Y);// + SPRITE_OFS_Y);
 
         }
 

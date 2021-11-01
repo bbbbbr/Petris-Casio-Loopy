@@ -10,17 +10,22 @@
 // See: http://creativecommons.org/licenses/by-nc-sa/4.0/
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 
 #include "common.h"
+#include "platform_compat.h"
 
 #include "game_board.h"
 #include "gfx.h"
 #include "player_gfx.h"
+#include "game_piece_data.h"
 
 #include "gameover_message.h"
 
-#define CHR2SPR(chr) ((UINT8)(chr -'A') + TILES_FONT_CHARS_START)
+#ifdef NINTENDO
+    #define CHR2SPR(chr) ((UINT8)(chr -'A') + TILES_FONT_CHARS_START)
+#elif defined(GAMEGEAR)
+    #define CHR2SPR(chr) ((UINT8)(chr -'A') + SPRITE_TILE_FONT_CHARS_START + TILES_FONT_BLANK_LEN)
+#endif
 
 const UINT8 SPR_GAMEOVER_CHARS[SPR_GAMEOVER_COUNT] = {
             CHR2SPR('G'),
@@ -129,8 +134,8 @@ void gameover_message_animate(void) {
                 }
 
                 move_sprite(SPR_GAMEOVER_START + c,
-                            SPR_GAMEOVER_LUT_X[c],
-                            SPR_GAMEOVER_LUT_Y[ spr_gameover_y_idx[c] ]);
+                            SPR_GAMEOVER_LUT_X[c] + SPRITE_OFS_X,
+                            SPR_GAMEOVER_LUT_Y[ spr_gameover_y_idx[c] ] + SPRITE_OFS_Y);
 
             } // for (c = min_spr; c < max_spr; c++) {
         } // if ((sys_time & 0x03) == 0x03)

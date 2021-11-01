@@ -12,13 +12,13 @@
 // game_types.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 
 #include "audio_common.h"
 #include "gfx.h"
 #include "gfx_print.h"
 #include "fade2pal.h"
+#include "platform_compat.h"
 
 
 #include "game_board.h"
@@ -55,9 +55,7 @@ void game_types_handle_level_transition(void) {
         // Update level indicator
         level_show();
 
-        // Do a color palette fade every N levels
         if ((player_level % LEVEL_CHANGE_PAL_NUM) == 0) {
-
             fade2pal_start_next();
         }
 
@@ -85,7 +83,6 @@ void game_types_handle_level_transition(void) {
 
         // Do a color palette fade every N levels
         if ((player_level % LEVEL_CHANGE_PAL_NUM) == 0) {
-
             fade2pal_start_next();
         }
 

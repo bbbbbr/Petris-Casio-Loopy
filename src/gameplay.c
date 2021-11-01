@@ -12,16 +12,20 @@
 // gameplay.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <rand.h>
 
 #include "common.h"
-#include "serial_link.h"
+#include "platform_compat.h"
 
-#include "audio_common.h"
-#include "gbt_player.h"
+#ifdef NINTENDO
+    #include "serial_link.h"
+#endif
+
 #include "sound.h"
-
+#include "audio_common.h"
+#ifdef NINTENDO
+    #include "gbt_player.h"
+#endif
 #include "swaprand.h"
 
 #include "input.h"
@@ -111,12 +115,17 @@ void gameplay_handle_gameover_screen(void) {
     // MusicPlay(falling_asleep_mod, falling_asleep_mod_Data, GBT_LOOP_NO);
 
     // Play end game ended sound effect
-    if ((link_status == LINK_STATUS_CONNECTED) &&
-        (GAMEOVER_MESSAGE_CHK(SPR_YOU_WON_CHARS))) {
-        PLAY_SOUND_LEVEL_UP;
-    } else {
+    #ifdef NINTENDO
+        if ((link_status == LINK_STATUS_CONNECTED) &&
+            (GAMEOVER_MESSAGE_CHK(SPR_YOU_WON_CHARS))) {
+            PLAY_SOUND_LEVEL_UP;
+        } else {
+            PLAY_SOUND_GAME_OVER;
+        }
+    #elif defined(GAMEGEAR)
         PLAY_SOUND_GAME_OVER;
-    }
+    #endif // GAMEGEAR
+
 
     // Clean up sprites and some other gfx
     gameplay_ended_cleanup();
@@ -124,10 +133,12 @@ void gameplay_handle_gameover_screen(void) {
     // Display game over message
     gameover_message_animate();
 
-    // Disconnect link if needed
-    if (link_status == LINK_STATUS_CONNECTED) {
-        link_reset();
-    }
+    #ifdef NINTENDO
+        // Disconnect link if needed
+        if (link_status == LINK_STATUS_CONNECTED) {
+            link_reset();
+        }
+    #endif
 
     // Clear game over message after a button press
     waitpadticked_lowcpu(J_START | J_A | J_B, NULL);
@@ -141,15 +152,17 @@ void gameplay_handle_gameover_screen(void) {
 // Initialize the random number generator
 void random_init(void) {
 
-    // If not connected in 2 Player Link then
-    // use DIV_REG to seed the generator.
-    //
-    // In 2 Player Link mode, the seed value will
-    // have *already* been negotiated over the link
-    // (and ultimately sourced from DIV_REG as well)
-    if (link_status != LINK_STATUS_CONNECTED) {
-        game_rand_init = DIV_REG;
-    }
+    #ifdef NINTENDO
+        // If not connected in 2 Player Link then
+        // use DIV_REG to seed the generator.
+        //
+        // In 2 Player Link mode, the seed value will
+        // have *already* been negotiated over the link
+        // (and ultimately sourced from DIV_REG as well)
+        if (link_status != LINK_STATUS_CONNECTED) {
+            game_rand_init = DIV_REG;
+        }
+    #endif
 
     initrand(game_rand_init);
 
@@ -211,11 +224,12 @@ void gameplay_init(void) {
 
     gameplay_prepare_board();
 
-    // Make sure magic code is turned off in 2-player mode to ensure fairness
-    if (link_status == LINK_STATUS_CONNECTED) {
-        magic_code_reset();
-    }
-
+    #ifdef NINTENDO
+        // Make sure magic code is turned off in 2-player mode to ensure fairness
+        if (link_status == LINK_STATUS_CONNECTED) {
+            magic_code_reset();
+        }
+    #endif
 
     // Init game state vars
     game_is_paused = FALSE;
@@ -292,10 +306,12 @@ void gameplay_prepare_board(void) {
 void gameplay_handle_pause(void) {
 
     if (option_game_music != OPTION_MUSIC_OFF) {
-        gbt_pause(1);
-        // Mute output of all sound since gpt_pause just freezes the sound and holds the current note
-        //NR50_REG = 0x00; // Max volume .[2..0] Right Main Vol, .[6..4] Left Main Volume
-        NR51_REG = 0x00; // Turn off all channels (left and right)
+        #ifdef NINTENDO
+            gbt_pause(1);
+            // Mute output of all sound since gpt_pause just freezes the sound and holds the current note
+            //NR50_REG = 0x00; // Max volume .[2..0] Right Main Vol, .[6..4] Left Main Volume
+            NR51_REG = 0x00; // Turn off all channels (left and right)
+        #endif
     }
 
     // Hide the game board and player piece (except in long-pet mode)
@@ -322,14 +338,16 @@ void gameplay_handle_pause(void) {
     // then pause state var will still be paused, so clear it
     if (game_is_paused == TRUE) {
 
-            __critical {
-                game_is_paused = FALSE;
-            }
+        __critical {
+            game_is_paused = FALSE;
+        }
 
+        #ifdef NINTENDO
             // If 2 Player then send unpause
             if (link_status == LINK_STATUS_CONNECTED) {
                  LINK_SEND( LINK_CMD_UNPAUSE);
             }
+        #endif
     }
 
     // Redraw the board and player piece
@@ -338,9 +356,11 @@ void gameplay_handle_pause(void) {
     game_piece_next_show(TRUE);
 
     if (option_game_music != OPTION_MUSIC_OFF) {
-        gbt_pause(0);
-        //NR50_REG = 0x77; // Max volume .[2..0] Right Main Vol, .[6..4] Left Main Volume
-        NR51_REG = 0xFF; // Turn ON all channels (left and right)
+        #ifdef NINTENDO
+            gbt_pause(0);
+            //NR50_REG = 0x77; // Max volume .[2..0] Right Main Vol, .[6..4] Left Main Volume
+            NR51_REG = 0xFF; // Turn ON all channels (left and right)
+        #endif
     }
 }
 
@@ -424,10 +444,12 @@ void gameplay_handle_input(void) {
 
                 game_is_paused = TRUE;
 
-                // If 2 Player then send pause
-                if (link_status == LINK_STATUS_CONNECTED) {
-                     LINK_SEND(LINK_CMD_PAUSE);
-                }
+                #ifdef NINTENDO
+                    // If 2 Player then send pause
+                    if (link_status == LINK_STATUS_CONNECTED) {
+                         LINK_SEND(LINK_CMD_PAUSE);
+                    }
+                #endif
             }
         }
 
@@ -436,7 +458,12 @@ void gameplay_handle_input(void) {
 
 
     // Toggle Pet Length overlay
-    if (KEY_TICKED(J_SELECT)) {
+    #ifdef NINTENDO
+        if (KEY_TICKED(J_SELECT)) {
+    #elif defined(GAMEGEAR)
+        // GBDK-sms/gg duplicates J_B into J_SELECT. Use J_UP instead for purpose
+        if (KEY_TICKED(J_UP)) {
+    #endif
 
         // PET_LENGTH_PREVIEW_ENABLED_FOR_ALL_MODES
         //
@@ -582,10 +609,10 @@ void gameplay_crunchup_update(void) {
             // Keep shifting the board until it's the last pass,
             // then make sure map is scrolled back to zero
             if (game_shake_enqueued >= GAME_CRUNCHUP_SHAKE_COMPLETE) {
-                SCX_REG = 0;
+                move_bkg(0,0);
                 game_shake_enqueued = GAME_CRUNCHUP_SHAKE_RESET;
             } else {
-                SCX_REG = sys_time & 0x03;
+                move_bkg(sys_time & 0x03, 0);
             }
         }
 

@@ -13,7 +13,13 @@
 #define BG_PAL_5    0x05U
 #define BG_PAL_6    0x06U
 #define BG_PAL_7    0x07U
-#define BG_PAL_BOARD_NEXT_PIECE_PREVIEW BG_PAL_0
+
+ #ifdef NINTENDO
+    #define BG_PAL_BOARD_NEXT_PIECE_PREVIEW BG_PAL_0
+#elif defined (GAMEGEAR)
+    // Make sure board tiles get forced to second bkg palette when reset
+    #define BG_PAL_BOARD_NEXT_PIECE_PREVIEW  (GG_TILE_ATTR_MSB_PAL_1 | 0x00U) // Use first pet palette
+ #endif
 
 #define BG_PRIORITY 0x80U
 #define BG_FLIP_Y   0x40U
@@ -36,7 +42,9 @@
 #define TILE_COUNT_INTRO       75U
 #define TILE_ID_BOARD_BLANK_BG    (TILES_INTRO_START + 3U)
 #define TILE_ID_BOARD_BLANK_BG_BW (TILES_INTRO_START + 0U)
-#define TILE_ID_BOARD_NEXT_PIECE_PREVIEW_BG  (TILES_INTRO_START + 0U)
+// #define TILE_ID_BOARD_NEXT_PIECE_PREVIEW_BG  (TILES_INTRO_START + 0U)
+#define TILE_ID_BOARD_NEXT_PIECE_PREVIEW_BG  (GP_EMPTY + TILES_PET_START) // change to use same as board so hi-contrast updates automatically
+
 #define TILE_ID_BOARD_UP        (TILES_INTRO_START + 63U)
 
 // Clouds are stored at end of intro tiles
@@ -51,13 +59,13 @@
 
 
 #define TILE_OFFSET_PET_TAIL_REG 0U
-#define TILE_OFFSET_PET_TAIL_WAG 33U // Offset to tail wag alternate tiles
+#define TILE_OFFSET_PET_TAIL_WAG 65U // Offset to tail wag alternate tiles
 
 
 #define TILES_PET_START        96U // This requires ^2 alignment
-#define TILE_COUNT_PETS        32U
+#define TILE_COUNT_PETS        64U
 #define TILE_COUNT_PETBLANK     1U
-#define TILE_COUNT_PET_ANIM__NOTLOADED_ONSTART__  8U // These don't get loaded at startup, just used to replace existing tiles
+#define TILE_COUNT_PET_ANIM__NOTLOADED_ONSTART__  16U // These don't get loaded at startup, just used to replace existing tiles
 
 #define TILE_COUNT_PETTOTAL      (TILE_COUNT_PETS + TILE_COUNT_PETBLANK)
 
@@ -78,11 +86,11 @@
     #define TILES_FONT_CHARS_START  (TILES_FONT_START  + TILES_FONT_BLANK_LEN)
     // Numeric tiles are a subset of main font
     // So these are just for convenience
-    #define TILES_FONT_CHARS_LEN   27U
+    #define TILES_FONT_CHARS_LEN   27U // Includes empty space
     #define TILES_FONT_NUMS_START  (TILES_FONT_START  + TILES_FONT_CHARS_LEN)
     #define TILE_COUNT_FONT_NUMS   11U //Tiles in order: 0123456789<blank>
 
-extern UINT8 * p_pet_tiles;
+extern const UINT8 * p_pet_tiles;
 extern UWORD * p_pet_palette;
 extern UINT8 pet_tiles_hicontrast_ram[];
 

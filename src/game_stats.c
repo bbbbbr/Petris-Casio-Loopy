@@ -12,7 +12,6 @@
 // game_board.c
 
 #include <gbdk/platform.h>
-#include <gb/cgb.h> // Include cgb functions
 #include <stdlib.h>
 #include <rand.h>
 

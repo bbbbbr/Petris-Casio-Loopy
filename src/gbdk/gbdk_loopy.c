@@ -93,6 +93,24 @@ void disable_interrupt_irq0_hblank() {
 }
 
 
+void enable_interrupt_irq1_vblank() {
+    // Enable IRQ1 VBlank in VDP with VBlank mode
+    VDP.SYNC_IRQ_CTRL = (IRQ1_ENABLE | IRQ1_SRC_VSYNC);
+
+    // Set trigger to Falling edge to match VDP output behavior. If this isn't set it will trigger repeatedly during vblank
+    INTC_ICR  = (INTC_ICR & ~INTC_ICR_IRQ1S_MASK) | INTC_ICR_IRQ1S_TRIG_FALLING_EDGE;
+    PFC_PACR1 = (PFC_PACR1 & ~PA13_MD10_MODE_MASK) | PA13_MD10_MODE_IRQ1;
+
+    sys_setInterruptPriority(INT_PRIO_IRQ1, IRQ_PRIORITY_15_HIGHEST);
+    // Set Global interrupt priority mask level to be 1 below the level configured above
+    sys_setInterruptMask(IRQ_PRIORITY_14);
+}
+
+
+void disable_interrupt_irq1_vblank() {
+    VDP.SYNC_IRQ_CTRL &= ~IRQ1_ENABLE;
+}
+
 #define SCANLINE_LUT_SZ        64u
 #define HALF_SCANLINE_LUT_SZ   (SCANLINE_LUT_SZ >> 1)
 #define HALF_SCANLINE_LUT_MASK (HALF_SCANLINE_LUT_SZ - 1u)
@@ -111,7 +129,8 @@ const int16_t scanline_offsets_tbl[SCANLINE_LUT_SZ] = {
     -6,    -4,    -3,    -2 };
 
 const int16_t * scanline_offsets = scanline_offsets_tbl;
-uint16_t hcount_cache;
+volatile uint16_t hcount_cache;
+volatile uint16_t hcount_cache_ending;
 
 // Hardware/Emulator status:
 //
@@ -120,23 +139,36 @@ uint16_t hcount_cache;
 // - CLoopy:   Does not appear to get called
 //
 void INTERRUPT SMALLFUNC isr_nmi_vblank(void) {
-    // Increment global sys time counter
+/*    // Increment global sys time counter
     sys_time++;
-
+    hcount_cache_ending = 123; //= hcount_cache;
     hcount_cache = -39; // (uint16_t)VDP.HCOUNT;  // Hardwiring -39 since there seems to be jitter in reading HCOUNT (maybe a clash with the HBlank ISR?)
     scanline_offsets = scanline_offsets_tbl + ((sys_time >> 2) & HALF_SCANLINE_LUT_MASK);
 
-    if (hcount_cache == 223) { disable_interrupt_irq0_hblank();}
+    // if (hcount_cache == 223) { disable_interrupt_irq0_hblank();}
+    // Instead of letting it freerun, only turn IRQ0 HBlank ISR on at the start of VBlank
+    // otherwise there seems to be some jitter in the timing
+    enable_interrupt_irq0_hblank();  */
+}
+
+
+void INTERRUPT SMALLFUNC isr_irq1_vblank(void) {
+    // Increment global sys time counter
+    sys_time++;
+    hcount_cache_ending = 123; //= hcount_cache;
+    hcount_cache = -39; // (uint16_t)VDP.HCOUNT;  // Hardwiring -39 since there seems to be jitter in reading HCOUNT (maybe a clash with the HBlank ISR?)
+    scanline_offsets = scanline_offsets_tbl + ((sys_time >> 2) & HALF_SCANLINE_LUT_MASK);
+
+    // if (hcount_cache == 223) { disable_interrupt_irq0_hblank();}
+    // Instead of letting it freerun, only turn IRQ0 HBlank ISR on at the start of VBlank
+    // otherwise there seems to be some jitter in the timing
+    enable_interrupt_irq0_hblank();  
 }
 
 
 void INTERRUPT SMALLFUNC isr_irq0_hblank(void) {
     hcount_cache++;
     VDP.BG_SCROLL[BG0_SCROLL_X] = scanline_offsets[hcount_cache & HALF_SCANLINE_LUT_MASK];
-
-    // Instead of letting it freerun, only turn IRQ0 HBlank ISR on at the start of VBlank
-    // otherwise there seems to be some jitter in the timing
-    enable_interrupt_irq0_hblank();
 }
 
 

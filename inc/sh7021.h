@@ -198,6 +198,10 @@ extern volatile uint16_t INTC_IPRD;
 extern volatile uint16_t INTC_IPRE;
 extern volatile uint16_t INTC_ICR;
 
+#define INTC_ICR_IRQ1S_TRIG_ACTIVE_LOW    (0b0u << 6)
+#define INTC_ICR_IRQ1S_TRIG_FALLING_EDGE  (0b1u << 6)
+#define INTC_ICR_IRQ1S_MASK               (0b1u << 6)
+
 #ifdef SH7021_INTC_SHORT_NAMES
 #define IPRA INTC_IPRA
 #define IPRB INTC_IPRB
@@ -206,6 +210,13 @@ extern volatile uint16_t INTC_ICR;
 #define IPRE INTC_IPRE
 #define ICR  INTC_ICR
 #endif //SH7021_INTC_SHORT_NAMES
+
+#define PA13_MD10_MODE_PA13_IO          (0b00u << 10)
+#define PA13_MD10_MODE_IRQ1             (0b01u << 10)
+#define PA13_MD10_MODE_ITU_TCLKB_INPUT  (0b10u << 10)
+#define PA13_MD10_MODE_DMA_DREQ0        (0b11u << 10)
+#define PA13_MD10_MODE_MASK             (0b11u << 10)
+
 
 // User Break Controller (UBC)
 extern volatile uint16_t UBC_BARH;

@@ -123,8 +123,12 @@ void disable_interrupt_nmi_vblank();
 void enable_interrupt_irq0_hblank();
 void disable_interrupt_irq0_hblank();
 
+void enable_interrupt_irq1_vblank();
+void disable_interrupt_irq1_vblank();
+
 void INTERRUPT SMALLFUNC isr_nmi_vblank(void);
 void INTERRUPT SMALLFUNC isr_irq0_hblank(void);
+void INTERRUPT SMALLFUNC isr_irq1_vblank(void);
 
 void vsync(void);
 

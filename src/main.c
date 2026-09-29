@@ -145,6 +145,7 @@ void init(void) {
 }
 
 
+extern volatile uint16_t hcount_cache_ending;
 int main() {
     init();
     magic_code_reset();
@@ -155,7 +156,8 @@ int main() {
         intro_splash();
     #endif
 
-    enable_interrupt_nmi_vblank();
+    // enable_interrupt_nmi_vblank();
+    enable_interrupt_irq1_vblank();
     enable_interrupt_irq0_hblank();
 
     while(1) {
@@ -165,7 +167,10 @@ int main() {
         if(!vbl_count) // TODO: fixme with vbl_count increment in interrupt
             vsync();
         vbl_count = 0;
+        set_bkg_tilemap_base_address(BG1_MAP_START());
         print_num_u16(0,0, sys_time, STR_DIGIT_LEN_5); // DEBUG
+        print_num_u16(0,2, hcount_cache_ending, STR_DIGIT_LEN_5); // DEBUG
+        set_bkg_tilemap_base_address(BG0_MAP_START());
         // print_num_u16(0,1, INTC_ICR, STR_DIGIT_LEN_5); // DEBUG
 
         // Handle keyboard input

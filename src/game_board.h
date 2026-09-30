@@ -85,7 +85,7 @@
 #define MSG_LEVEL_UP_REPEAT 2
 
 #define BRD_CLR_DELAY_NONE 0
-#define BRD_CLR_DELAY_CLEAR_MED 35// 25
+#define BRD_CLR_DELAY_CLEAR_MED (35u - 7u) // Reduced by 7 for +/- delay added by calling vsync to reduce visual snow glitches on loopy // 35 // 25
 
 #define BRD_PIECE_CLEAR_COUNT_NONE 0
 

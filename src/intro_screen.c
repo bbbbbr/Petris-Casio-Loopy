@@ -69,6 +69,7 @@ static void intro_background_and_logo_init(void) {
     uint16_t base_tile_id = SHARED_4BPP_TRANSP_TILE_ID_START;   // TODO: Maybe a global shared next_free_bg_tile var with add_tiles and remove_tiles
     // Load the globally shared (for convenience) transparent tile
     set_bkg_tiles_target_screen_a_or_b(LAYER_SCREEN_A);
+    vsync();
     set_bkg_4bpp_data(base_tile_id, SHARED_4BPP_TRANSP_TILE_COUNT, shared_4bpp_transparent_tile);
     base_tile_id += SHARED_4BPP_TRANSP_TILE_COUNT;
 
@@ -76,6 +77,7 @@ static void intro_background_and_logo_init(void) {
     // BG1 is set to use pals 4,5,6,7 (so no need to offset palette)
     set_bkg_tiles_target_screen_a_or_b(LAYER_SCREEN_A);
 
+    vsync();
     set_bkg_4bpp_palette(PAL_ASSIGN_BG1_0, intro_screen_out_PALETTE_COUNT, intro_screen_out_palettes);
     set_bkg_4bpp_data(base_tile_id, intro_screen_out_TILE_COUNT, intro_screen_out_tiles);
     set_bkg_tilemap_base_address(BG1_MAP_START());
@@ -92,6 +94,7 @@ static void intro_background_and_logo_init(void) {
     set_bkg_tilemap_base_address(BG0_MAP_START());
     set_bkg_tiles_target_screen_a_or_b(LAYER_SCREEN_A);
 
+    vsync();
     set_bkg_4bpp_palette(PAL_ASSIGN_BG0_0, intro_logo_out_PALETTE_COUNT, intro_logo_out_palettes);
     set_bkg_4bpp_data(base_tile_id, intro_logo_out_TILE_COUNT, intro_logo_out_tiles);
     // First fill entire BG1 tilemap with clear tiles to ensure
@@ -113,16 +116,18 @@ static void intro_clouds_init(void) {
     // Bitmap BM1/BM2 cloud layers on Screen B, Math ADD + BLEND
     SHOW_SCREEN_B;
     cloud_counter = 0;
-
+    vsync();
     // Set up shared palette (from one of the images)
     set_bkg_4bpp_palette(PAL_ASSIGN_BM_0, 1, intro_clouds_light_out_palette);  // 1 Palette (actually 3 colors at present, but allow it to overrun to 16)
 
     // Load both sets of cloud bitmaps to the shared VRAM, one at top and other lower
     // Make the lighter clouds on BM2 so that they scroll over the darker ones
     VDP.BM_SCROLLY[BM2_SCROLL_Y] = (uint16_t)-16u;
+    vsync();    
     load_bitmap_4bpp(0, 0u, intro_clouds_light_out_PX_WIDTH, intro_clouds_light_out_PX_HEIGHT, intro_clouds_light_out);
 
     VDP.BM_SCROLLY[BM3_SCROLL_Y] = (uint16_t)(-16u + DEVICE_SCREEN_PX_HEIGHT);
+    vsync();
     load_bitmap_4bpp(0, DEVICE_SCREEN_PX_HEIGHT, intro_clouds_dark_out_PX_WIDTH, intro_clouds_dark_out_PX_HEIGHT, intro_clouds_dark_out);
 }
 
@@ -135,6 +140,7 @@ static void intro_text_init(void) {
     // Load the 8x16 font and print it to the sprites
     #define TILE_LOAD_OFFSET_FONT_VRAM_ABS     (OBJ_TILEGROUP_BASE_512 + 0u)
     #define TILE_LOAD_OFFSET_FONT_VRAM_OAM_REL (0u)
+    vsync();    
     load_8x16_font_tiles(TILE_LOAD_OFFSET_FONT_VRAM_ABS, TILE_LOAD_OFFSET_FONT_VRAM_OAM_REL);
 
     load_8x16_font_sprite_palettes();
@@ -192,6 +198,7 @@ static void intro_background_and_logo_cleanup(void) {
     // BG0 is set to use pals 0,1,2,3
     set_bkg_tilemap_base_address(BG0_MAP_START());
     set_bkg_tiles_target_screen_a_or_b(LAYER_SCREEN_A);
+    vsync();
     fill_bkg_rect(0, 0, DEVICE_SCREEN_BUFFER_WIDTH, DEVICE_SCREEN_BUFFER_HEIGHT, SHARED_4BPP_TRANSP_TILE_ID_START);
     VDP.BG_SCROLL[BG0_SCROLL_Y] = 0;
 }

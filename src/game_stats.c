@@ -100,6 +100,7 @@ void stats_maxpet_draw(void) {
     board_hide_all(BRD_CLR_DELAY_CLEAR_MED);
     board_reset();
 
+    vsync();
     PRINTXY(MAXPET_TXT_X, MAXPET_TXT_Y,
           MAXPET_TXT_MSG, MAXPET_TXT_DELAY);
 
@@ -113,13 +114,14 @@ void stats_maxpet_draw(void) {
         // Track right-most piece for subsequent length overlay
         if (maxpet_x[c] > max_x) max_x = maxpet_x[c];
 
+        vsync();
         board_set_tile_xy((int8_t)maxpet_x[c],
                           (int8_t)maxpet_y[c],
                           maxpet_pieces[c],
                           maxpet_attrib[c],
                           GP_CONNECT_NONE_BITS);
 
-        delay(MAXPET_TILE_DELAY);
+        delay((MAXPET_TILE_DELAY) - 7u); // -7 to accommodate vsync +/-
     }
 
     // Show the pet length overlay
@@ -178,6 +180,7 @@ void stats_show_var(uint8_t x, uint8_t y, const char* text, uint16_t value) {
     increment = value / STATS_NUM_STEPS;
     if (increment == 0) increment++;
 
+    vsync();
     PRINTXY(x, y, text, STATS_TXT_DELAY);
 
     // Ramp value up from zero to it's value in N steps
@@ -197,7 +200,8 @@ void stats_show_var(uint8_t x, uint8_t y, const char* text, uint16_t value) {
         // Skip delay and sound if buttons pressed
         if (!KEY_PRESSED(J_B | J_A)) {
             PLAY_SOUND_PRINT_CHAR;
-            delay(STATS_NUM_DELAY);
+            delay((STATS_NUM_DELAY) - 7u);  // -7 is to accommodate for vsync +/-
+            vsync();
         }
     }
 

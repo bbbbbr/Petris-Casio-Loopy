@@ -184,6 +184,7 @@ void options_screen_setting_update(int8_t dir) {
         }
 
 
+        vsync();
         options_screen_setting_draw(options_menu_index);
 
         // Turn music on/off to preview music option
@@ -256,9 +257,11 @@ void options_screen_exit_cleanup(void) {
     fade_start(FADE_OUT);  // TODO fade out
     HIDE_SPRITES;  // TODO
 */
+
     // TODO: Fill BG0 tilemap with empty tiles
     hide_sprites_range(0, MAX_HARDWARE_SPRITES);
 
+    vsync();
     // Clear BG0 (where the text is printed)
     fill_bkg_rect(0, 0, DEVICE_SCREEN_BUFFER_WIDTH, DEVICE_SCREEN_BUFFER_HEIGHT, SHARED_4BPP_TRANSP_TILE_ID_START);
     VDP.BG_SCROLL[BG0_SCROLL_Y] = 0;
@@ -277,6 +280,7 @@ void options_screen_init(void) {  // TODO
     fade_set_pal(BG_PAL_4, 4, intro_screen_palette, FADE_PAL_BKG);
 */
 
+    vsync();
     // Rely on Title screen graphics loading for Background image and Font tiles / drawing setup
     load_8x16_font_tiles(TILE_LOAD_OFFSET_FONT_VRAM_ABS, 0u);  // No use of sprite printing, OAM tile load start is a shim
 
@@ -289,6 +293,7 @@ void options_screen_init(void) {  // TODO
     options_screen_draw();
 
     for (int c = OPTION_MENU_MIN; c <= OPTION_MENU_MAX; c++) {  // TODO
+        vsync();
         options_screen_setting_draw(c);
     }
 

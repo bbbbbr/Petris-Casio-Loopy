@@ -77,6 +77,7 @@ void game_types_handle_level_transition(void) {
 
         board_hide_all(BRD_CLR_DELAY_CLEAR_MED);
 
+        vsync();
         PRINTXY(MSG_LEVEL_UP_X, MSG_LEVEL_UP_Y, MSG_LEVEL_UP_CTEXT,0);
 
         // Update level indicator before populating the board

@@ -51,6 +51,8 @@ bool level_increment_enqueue = false;
 
 void player_info_display(void) {
 
+    vsync();
+
     // Display the score
     //
     // There is a static trailing zero after the actual score to

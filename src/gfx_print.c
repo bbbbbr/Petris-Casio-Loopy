@@ -202,6 +202,7 @@ void print_to_tilemap(const char * txt, uint16_t delay_time) {
             if (!KEY_PRESSED(J_B | J_A)) {
                 // PLAY_SOUND_PRINT_CHAR;
                 // delay(delay_time);
+                // vsync();
             }
         }
 */

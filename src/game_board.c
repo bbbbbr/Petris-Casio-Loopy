@@ -66,6 +66,8 @@ void board_hide_all(uint16_t delay_amount) {
 
     int8_t y;
 
+    vsync();
+
     // for (y = BRD_ST_Y; y < (BRD_ST_Y + BRD_HEIGHT); y++) {
     // Clear board from bottom up
     for (y = BRD_END_Y; y >= BRD_ST_Y; y--) {
@@ -78,6 +80,7 @@ void board_hide_all(uint16_t delay_amount) {
         if (delay_amount) {
             fill_bkg_rect(BRD_ST_X, y, BRD_WIDTH, 1, TILE_ID_BOARD_UP + TILES_PET_START_VRAM_ABSOLUTE);
             delay(delay_amount);
+            vsync();
         }
 
         // Draw the blank row **on** the board on BG0
@@ -100,6 +103,7 @@ void board_hide_all(uint16_t delay_amount) {
 // Note: board_bgtile_output[] should contain ABSOLUTE tile indexes (not OAM relative) on Loopy
 void board_redraw_all(void) {
 
+    vsync();
     // Fill with WHITE *underneath** the board on BG1
     // for normal gameplay background.
     // This is in case it was previously filled with BLUE
@@ -195,7 +199,6 @@ void board_crunch_up(void) {
 
 // Redraws single tile on board
 // Note: board_bgtile_output[] should contain ABSOLUTE tile indexes (not OAM relative) on Loopy
-//
 void board_draw_tile_xy(int8_t x, int8_t y, uint8_t tile_index) {
 
     // Update BG Tilemap from Game Board
@@ -205,6 +208,7 @@ void board_draw_tile_xy(int8_t x, int8_t y, uint8_t tile_index) {
     set_bkg_tile_xy(BRD_ST_X + (int16_t)x, BRD_ST_Y + (int16_t)y,
                     board_bgtile_output[tile_index]);
 
+    // No vsync() here as that's handled by caller
     set_bkg_tiles_target_subpal(PAL_0);  // Revert to default palette for subsequent writes
 }
 
@@ -239,10 +243,12 @@ void board_flash_message(uint8_t start_x, uint8_t start_y, char * text, char * c
 
     for (c = 0; c < repeat; c++) {
         // blank print text using the provided ctext
+        vsync();
         PRINTXY(start_x, start_y, ctext,0);
         delay(500);
 
         // print provided text
+        vsync();
         PRINTXY(start_x, start_y, text,0);
         delay(500);
     }
@@ -310,8 +316,9 @@ void board_clear_tile_xy(int8_t x, int8_t y) {
         for (c=0; c < ARRAY_LEN(gp_dissolve_anim); c++) {
             board_pieces[tile_index] = gp_dissolve_anim[c];
             board_bgtile_output[tile_index] = PIECE_TO_ABSOLUTE_BGTILE(gp_dissolve_anim[c], GP_ATTRIB_EMPTY);
+            vsync();
             board_draw_tile_xy(x, y, tile_index);
-            delay(40);
+            delay(40u - 7u);  // -7 to accommodate vsync +/-
         }
 
         board_pieces[tile_index] = GP_EMPTY;
@@ -320,10 +327,11 @@ void board_clear_tile_xy(int8_t x, int8_t y) {
         // Update connection setting
         board_connect[tile_index] = GP_CONNECT_NONE_BITS;
 
+        vsync();
         board_draw_tile_xy(x, y, tile_index);
 
         // Last extra delay between subsequent tile clearings
-        delay(20);
+        delay(20 - 7u);   // -7 to accommodate vsync +/-
     }
 
     // Decrement tail counter if needed
@@ -357,6 +365,7 @@ void board_set_tile_xy(int8_t x, int8_t y, uint8_t piece, uint8_t attrib, uint8_
         board_connect[tile_index] = connect;
         board_bgtile_output[tile_index] = PIECE_TO_ABSOLUTE_BGTILE(piece, attrib);
 
+        vsync();  // TODO: There might not be enough vram snow from one write to justify the 0-16 msec delay from this
         board_draw_tile_xy(x, y, tile_index);
     }
 }

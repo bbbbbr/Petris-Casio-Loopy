@@ -88,6 +88,7 @@ const palette_color_t game_board_under_pal[16] = {
 
 void board_gfx_init(void) {
 
+    vsync();
     pet_tiles_prepare();
     board_gfx_init_pettiles();
 
@@ -133,6 +134,7 @@ void board_gfx_init_pettiles(void) {
     #define TILE_LOAD_START (SHARED_4BPP_TRANSP_TILE_ID_START + intro_screen_out_TILE_COUNT + SHARED_4BPP_TRANSP_TILE_COUNT)
     uint16_t base_tile_id = TILE_LOAD_START;
 
+    vsync();
     // Background under game board (currently solid white)
         set_bkg_tilemap_base_address(BG1_MAP_START());
         set_bkg_tiles_target_subpal(REL_PAL_BOARD_UNDER_BG1_1);

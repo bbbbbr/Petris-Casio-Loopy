@@ -320,6 +320,7 @@ void gameplay_handle_pause(void) {
     player_hinting_special_show(false);
     player_hinting_drop_show(false);
 
+    vsync();
     PRINTXY(BRD_ST_X + 2, BRD_ST_Y + 2,"PAUSED",0);   // TODO: Sprite based pause text instead of on the bg tilemap
 
 

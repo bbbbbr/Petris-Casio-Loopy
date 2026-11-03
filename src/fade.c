@@ -115,8 +115,8 @@ void palette_fade_start(bool is_FADE_TO_BLACK) {
         palette_fade_is_to_black = is_FADE_TO_BLACK;
 
         // Register the ISR handlers
-        add_vbl(palette_fade_vlb_handler);
-        add_vbl_ended(palette_fade_vlb_ended_handler);
+        add_vbl(palette_fade_vbl_handler);
+        add_vbl_ended(palette_fade_vbl_ended_handler);
 
     enable_interrupts(status_register_saved);
 
@@ -139,7 +139,7 @@ static void palette_fade_to_target_end(void) {
 }
 
 
-void palette_fade_vlb_handler(void) {
+void palette_fade_vbl_handler(void) {
     
     // If palette fade is active then copy the cached palette to the hardware vdp palette
     if (palette_fade_active) {
@@ -164,7 +164,7 @@ void set_fade_target_4bpp_palette_entry(unsigned int palette, unsigned int entry
 
 
 // Called from simulated end of VBlank interrupt
-void palette_fade_vlb_ended_handler(void) {
+void palette_fade_vbl_ended_handler(void) {
 
     // TODO: DEBUG TEST: SLOW DAWN FADES A LOT
     #ifdef DEBUG_SLOW_FADE

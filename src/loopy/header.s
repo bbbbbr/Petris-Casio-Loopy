@@ -10,7 +10,7 @@
 	! NOT REQUIRED, you can put anything you want here.
 	! 100 bytes available. Pad first 4 for nice alignment.
 	! Example in the format of Wanwan header:
-!	.section .header.copyright
-!	.long 0
-!	.asciz "(C)2026 Petris by bbbbbr"
-!	.asciz "ver 1.00"
+	.section .header.copyright
+	.long 0
+	.asciz "(C)2026 Petris by bbbbbr"
+	.asciz "ver 1.00"

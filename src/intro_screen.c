@@ -60,7 +60,7 @@ static uint8_t        intro_menu_id_active;
 static uint16_t       menu_text_spr_ids[INTRO_MENU_ID_COUNT + 1u];  // Trailing entryu
 static const uint8_t  menu_text_spr_y[INTRO_MENU_ID_COUNT]      = {OAM_TEXT_START_Y,     OAM_TEXT_HIGHSCORES_Y,     OAM_TEXT_CREDITS_Y};
 static const char *   menu_items_text[INTRO_MENU_ID_COUNT]      = {STR_INTRO_TEXT_START, STR_INTRO_TEXT_HIGHSCORES, STR_INTRO_TEXT_CREDITS};
-static const uint16_t menu_next_game_state[INTRO_MENU_ID_COUNT] = {GAME_OPTIONS_INIT,    GAME_HIGHSCORES_INIT,      /* Credits entry is nerfed until implemented */ GAME_INTRO };
+static const uint16_t menu_next_game_state[INTRO_MENU_ID_COUNT] = {GAME_OPTIONS_INIT,    GAME_HIGHSCORES_INIT,      CREDITS_SCREEN_INIT };
 
 static uint16_t sprite_counter = 0;
 static uint16_t cloud_counter = 0;

@@ -18,6 +18,7 @@
 #define FADE_SKY_PALS_COUNT 9
 #define FADE_SKY_PALS_MIN   0
 #define FADE_SKY_PALS_MAX   (FADE_SKY_PALS_COUNT - 1)
+#define FADE_SKY_PALS_END_DAYTIME (FADE_SKY_PALS_MAX - 3u)  // dusky purple, dark blue, morning purple
 
 extern const palette_color_t fade_font_8x16_outline_cols[FADE_SKY_PALS_COUNT];
 extern const palette_color_t * fade_sky_pals[FADE_SKY_PALS_COUNT];

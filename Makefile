@@ -49,6 +49,7 @@ ROM    = $(BINDIR)/petris.bin
 
 # Basic compile options
 OPTIMIZE = -Os
+# OPTIMIZE = -O3
 LIBS =
 
 # Below here probably doesn't need to be touched
@@ -82,6 +83,8 @@ CFLAGS += -falign-functions=4 -ffunction-sections -fdata-sections
 CFLAGS += -fomit-frame-pointer -fno-asynchronous-unwind-tables -fno-unwind-tables
 CFLAGS += -Wstack-usage=$(shell numfmt --from=iec $(STACKSIZE)) -I$(INCDIR) -I$(RES_SRCDIR)
 CFLAGS += -MMD -MP # Header file dependency output (-MMD) for Makefile use + per-header Phony rules (-MP)
+
+# CFLAGS += -S -fverbose-asm 
 
 CXXFLAGS = -std=c++23 -fno-exceptions -fno-non-call-exceptions -fno-rtti -fno-threadsafe-statics
 

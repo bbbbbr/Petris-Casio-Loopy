@@ -14,5 +14,6 @@
 
 void fade2pal_init(void);
 void fade2pal_start_next(void);
+void fade2pal_early_wrap_skip_night_pals(void);
 
 #endif

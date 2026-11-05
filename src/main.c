@@ -34,6 +34,8 @@
 #include "highscores.h"
 #include "highscores_screen.h"
 
+#include "credits_screen.h"
+
 #include "options.h"
 #include "cartsave.h"
 
@@ -168,7 +170,7 @@ void init(void) {
     init_gfx_hardware();
 
     // Set the appropriate controller scanning mode and video height
-    bios_vdpMode(CONTROL_MODE_GAMEPAD, VIDEO_HEIGHT_224P);    
+    bios_vdpMode(CONTROL_MODE_GAMEPAD, VIDEO_HEIGHT_224P);
 
     palettes_init();
 }
@@ -253,6 +255,15 @@ int main() {
 
             case GAME_HIGHSCORES:
                 highscores_screen_handle();
+                break;
+
+            case CREDITS_SCREEN_INIT:
+                credits_screen_init();
+                game_state = CREDITS_SCREEN;
+                break;
+
+            case CREDITS_SCREEN:
+                credits_screen_handle();
                 break;
         }
     }

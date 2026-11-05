@@ -68,3 +68,10 @@ void fade2pal_start_next(void) {
     }
 }
 
+
+void fade2pal_early_wrap_skip_night_pals(void) {
+    if (fade_sky_pal_idx == FADE_SKY_PALS_END_DAYTIME) {
+        fade_sky_pal_idx = FADE_SKY_PALS_MIN;
+    }
+
+}

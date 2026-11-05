@@ -132,8 +132,8 @@ static void palette_fade_to_target_end(void) {
 
         // Clear state flag and de-register the ISR handlers
         palette_fade_active = false;
-        remove_vbl();
-        remove_vbl_ended();
+        remove_vbl(palette_fade_vbl_handler);
+        remove_vbl_ended(palette_fade_vbl_ended_handler);
 
     enable_interrupts(status_register_saved);
 }

@@ -136,7 +136,7 @@ void intro_splash(void) {
 
     // Disable HBlank interrupt
     disable_interrupt_irq0_hblank();
-    remove_irq0();
+    remove_irq0(intro_splash_hblank_effect_isr);
 
     // ========== START EFFECT ==========
 

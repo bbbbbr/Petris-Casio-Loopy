@@ -200,16 +200,16 @@ void print_to_tilemap(const char * txt, uint16_t delay_time) {
         print_x++;
         txt++;
         
-/*        if (delay_time) {  // TODO: print delay time
+        if (delay_time) {
 
             UPDATE_KEYS();
             // Skip delay if buttons pressed
             if (!KEY_PRESSED(J_B | J_A)) {
                 // PLAY_SOUND_PRINT_CHAR;
-                // delay(delay_time);
+                delay(delay_time);
             }
         }
-*/
+
     }
 }
 
@@ -254,6 +254,6 @@ void print_num_u16(uint16_t x, uint16_t y, uint16_t num, uint16_t fixed_str_leng
     }
 
     // Draw the digits on the background tilemap
-    set_bkg_tiles(x, y, fixed_str_length, 2, // 1 tile high
+    set_bkg_tiles(x, y, fixed_str_length, FONT_8x16_TILE_HEIGHT, // 1 tile high
                   &str_digit_tiles[index]); // Start at first digit and go to end of digits (length depends on fixed_str_length)
 }

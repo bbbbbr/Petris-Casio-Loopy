@@ -72,7 +72,8 @@ volatile uint16_t simulated_vdp_status = VDP_STATUS_RESET;  // Used with ITU1 ti
 
 OAM_item_t shadow_OAM[SHADOW_OAM_MAX_SPRITES];
 void (* registered_irq0_handler)(void) = NULL;
-void (* registered_vbl_handler)(void) = NULL;
+void (* registered_vbl_handler0)(void) = NULL;
+void (* registered_vbl_handler1)(void) = NULL;
 void (* registered_vbl_ended_handler)(void) = NULL;
 
 #define VRAM_XFER_BUF_SZ    512u
@@ -277,20 +278,39 @@ void add_irq0(void (* handler)(void)) {
 }
 
 
-void remove_irq0(void) {
-    registered_irq0_handler = NULL;
+void remove_irq0(void (* handler)(void)) {
+    if (registered_irq0_handler == handler) {
+        registered_irq0_handler = NULL;
+    }
 }
 
 
+// Max of two slots for handlers
 void add_vbl(void (* handler)(void)) {
-    registered_vbl_handler = handler;
+    // Assign to second slot if first slot is in use
+    if (registered_vbl_handler0 == NULL)
+        registered_vbl_handler0 = handler;
+    else
+        registered_vbl_handler1 = handler;
 }
 
 
-void remove_vbl(void) {
-    registered_vbl_handler = NULL;
+// Only removes handler if a match is found
+void remove_vbl(void (* handler)(void)) {
+    if (registered_vbl_handler0 == handler) {
+        registered_vbl_handler0 = NULL;
+    }
+    else if (registered_vbl_handler1 == handler) {
+        registered_vbl_handler1 = NULL;
+    }
 }
 
+
+// Clears all handlers
+void remove_vbl_all(void) {
+    registered_vbl_handler0 = NULL;
+    registered_vbl_handler1 = NULL;
+}
 
 // Note, priority for this interrupt is set -1 below the VBlank and HBlank
 // handlers so it doesn't delay those (HBlank in particular). Which means
@@ -300,8 +320,10 @@ void add_vbl_ended(void (* handler)(void)) {
 }
 
 
-void remove_vbl_ended(void) {
-    registered_vbl_ended_handler = NULL;
+void remove_vbl_ended(void (* handler)(void)) {
+    if (registered_vbl_ended_handler == handler) {
+        registered_vbl_ended_handler = NULL;
+    }
 }
 
 
@@ -321,7 +343,7 @@ void remove_vbl_ended(void) {
 void INTERRUPT SMALLFUNC isr_nmi_vblank(void) {
 }
 
-
+// TODO: write asm version with minimal stack saving
 void INTERRUPT SMALLFUNC isr_irq0_vblank_hblank(void) {
     simulated_vdp_vcount++;  // Part of the problem might be this breaking down when DMA transfers happen? (i.e. skipped hcounts never get restored?)
     cached_vdp_vcount = VDP.VCOUNT;
@@ -351,7 +373,8 @@ void INTERRUPT SMALLFUNC isr_irq1_vblank(void) {
     simulated_vdp_vcount = VERT_SCANLINE_VBLANK_FIRST; // (uint16_t)VDP.VCOUNT;
     cached_vdp_vcount = VDP.VCOUNT;
 
-    if (registered_vbl_handler) registered_vbl_handler();
+    if (registered_vbl_handler0) registered_vbl_handler0();
+    if (registered_vbl_handler1) registered_vbl_handler1();
 }
 
 

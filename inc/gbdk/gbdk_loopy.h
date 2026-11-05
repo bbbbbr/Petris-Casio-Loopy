@@ -119,6 +119,8 @@
 #define SCX_BM3_REG (VDP.BM_SCROLL[BM3_SCROLL_X])
 #define SCY_BM3_REG (VDP.BM_SCROLL[BM3_SCROLL_Y])
 
+#define LY_REG      (simulated_vdp_vcount)
+
 // Channel 1 DMA copy
 // The DMA timeout may never happen if it doesn't execute during the DMA
 #define DMA1_U16_MEMCOPY_AND_WAIT_DONE(dest, src, u16_count) \
@@ -180,11 +182,14 @@ void enable_interrupt_irq1_vblank(void);
 void disable_interrupt_irq1_vblank(void);
 
 void add_irq0(void (* handler)(void));
-void remove_irq0();
+void remove_irq0(void (* handler)(void));
+
 void add_vbl(void (* handler)(void));
-void remove_vbl(void);
+void remove_vbl(void (* handler)(void));
+void remove_vbl_all(void);
+
 void add_vbl_ended(void (* handler)(void));
-void remove_vbl_ended(void);
+void remove_vbl_ended(void (* handler)(void));
 
 
 void INTERRUPT SMALLFUNC isr_nmi_vblank(void);
